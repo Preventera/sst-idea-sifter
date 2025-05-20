@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
 import CriteriaSlider from "./criteria-slider";
 import { Project, Criteria } from "../types/project";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface ProjectFormProps {
   onAddProject: (project: Project) => void;
@@ -46,6 +49,7 @@ const ProjectForm = ({ onAddProject, editingProject, onUpdateProject, onCancelEd
     alignementEthique: 1
   });
   const [useWeights, setUseWeights] = useState(false);
+  const [criteriaModified, setCriteriaModified] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,6 +60,13 @@ const ProjectForm = ({ onAddProject, editingProject, onUpdateProject, onCancelEd
         variant: "destructive"
       });
       return;
+    }
+
+    if (!criteriaModified) {
+      toast({
+        title: "Attention",
+        description: "Vous n'avez pas modifié les critères d'évaluation. Les valeurs par défaut (5/10) seront utilisées.",
+      });
     }
 
     let score: number;
@@ -89,6 +100,7 @@ const ProjectForm = ({ onAddProject, editingProject, onUpdateProject, onCancelEd
       onAddProject(project);
       setName("");
       setCriteria(initialCriteria);
+      setCriteriaModified(false);
       toast({
         title: "Projet ajouté",
         description: `Le projet "${name}" a été ajouté avec succès.`
@@ -98,6 +110,7 @@ const ProjectForm = ({ onAddProject, editingProject, onUpdateProject, onCancelEd
 
   const updateCriteria = (key: keyof Criteria, value: number) => {
     setCriteria(prev => ({ ...prev, [key]: value }));
+    setCriteriaModified(true);
   };
 
   const updateWeight = (key: string, value: number) => {
@@ -123,6 +136,13 @@ const ProjectForm = ({ onAddProject, editingProject, onUpdateProject, onCancelEd
               className="w-full"
             />
           </div>
+
+          <Alert className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Ajustez les valeurs ci-dessous pour évaluer votre projet. Par défaut, tous les critères sont à 5/10.
+            </AlertDescription>
+          </Alert>
 
           <div className="mb-6">
             <Tabs defaultValue="standard">
