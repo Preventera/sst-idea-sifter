@@ -16,11 +16,12 @@ const ExportButton = ({ projects }: ExportButtonProps) => {
       "Rang",
       "Projet",
       "Impact",
-      "Confiance",
-      "Facilité",
+      "Excellence",
+      "Faisabilité",
+      "Gouvernance",
+      "Sécurité",
       "Acceptabilité",
-      "Valeur Réglementaire",
-      "Alignement Éthique",
+      "Pérennité",
       "Score Global"
     ];
 
@@ -32,11 +33,12 @@ const ExportButton = ({ projects }: ExportButtonProps) => {
       (index + 1).toString(),
       project.name,
       project.criteria.impact.toString(),
-      project.criteria.confiance.toString(),
-      project.criteria.facilite.toString(),
+      project.criteria.excellence.toString(),
+      project.criteria.faisabilite.toString(),
+      project.criteria.gouvernance.toString(),
+      project.criteria.securite.toString(),
       project.criteria.acceptabilite.toString(),
-      project.criteria.valeurReglementaire.toString(),
-      project.criteria.alignementEthique.toString(),
+      project.criteria.perennite.toString(),
       project.score.toString()
     ]);
 
