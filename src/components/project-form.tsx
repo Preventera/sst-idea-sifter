@@ -20,20 +20,22 @@ interface ProjectFormProps {
 
 const initialCriteria: Criteria = {
   impact: 5,
-  confiance: 5,
-  facilite: 5,
+  excellence: 5,
+  faisabilite: 5,
+  gouvernance: 5,
+  securite: 5,
   acceptabilite: 5,
-  valeurReglementaire: 5,
-  alignementEthique: 5
+  perennite: 5
 };
 
 const criteriaDescriptions = {
-  impact: "Estime l'effet potentiel du projet sur la prévention des accidents et l'amélioration de la SST. Un projet avec un fort impact pourrait réduire significativement le nombre d'incidents en milieu de travail ou améliorer la santé des employés.",
-  confiance: "Reflète le degré de certitude quant à la fiabilité technique de l'IA proposée et aux chances de succès du projet. Il s'agit d'évaluer dans quelle mesure l'initiative tiendra ses promesses et fonctionnera comme prévu en conditions réelles.",
-  facilite: "Évalue à quel point il sera aisé de déployer et d'intégrer le projet IA dans le contexte réel de travail. Cela inclut la complexité technique du déploiement, le temps et les ressources nécessaires.",
-  acceptabilite: "Mesure dans quelle mesure le projet sera adopté par les utilisateurs finaux et les parties prenantes sur le terrain (travailleurs, encadrement SST, représentants du personnel).",
-  valeurReglementaire: "Reflète la contribution du projet à la conformité aux lois et normes en SST, ainsi que son utilité vis-à-vis des exigences réglementaires ou normatives.",
-  alignementEthique: "Vérifie que le projet d'IA respecte les principes éthiques attendus comme la transparence, l'explicabilité, l'équité et le respect de la vie privée."
+  impact: "Évalue l'adéquation du projet avec les enjeux prioritaires de SST et son potentiel d'impact mesurable sur la sécurité des travailleurs et la réduction des risques professionnels.",
+  excellence: "Mesure la qualité scientifique et technique de la solution proposée, incluant le niveau d'innovation et sa capacité à dépasser les approches traditionnelles.",
+  faisabilite: "Évalue le réalisme du calendrier, du budget, la disponibilité des données d'entraînement pertinentes et la capacité à intégrer la solution dans les environnements de travail existants.",
+  gouvernance: "Vérifie le respect des principes éthiques (transparence, équité, absence de biais), l'alignement avec les cadres réglementaires et l'implication d'un comité interdisciplinaire.",
+  securite: "Évalue la gestion des risques spécifiques liés à l'IA générative, la mise en place de mécanismes de contrôle et la capacité à garantir la fiabilité et la sécurité des utilisateurs.",
+  acceptabilite: "Mesure l'acceptabilité sociale et organisationnelle des usages proposés et la clarté sur la valeur ajoutée pour toutes les parties prenantes.",
+  perennite: "Évalue la stratégie d'exploitation des résultats, de diffusion et la pérennité de la solution (maintenance, évolutivité, adaptation aux évolutions)."
 };
 
 const ProjectForm = ({ onAddProject, editingProject, onUpdateProject, onCancelEdit }: ProjectFormProps) => {
@@ -42,11 +44,12 @@ const ProjectForm = ({ onAddProject, editingProject, onUpdateProject, onCancelEd
   const [criteria, setCriteria] = useState<Criteria>(editingProject?.criteria || initialCriteria);
   const [weights, setWeights] = useState({
     impact: 1,
-    confiance: 1,
-    facilite: 1,
+    excellence: 1,
+    faisabilite: 1,
+    gouvernance: 1,
+    securite: 1,
     acceptabilite: 1,
-    valeurReglementaire: 1,
-    alignementEthique: 1
+    perennite: 1
   });
   const [useWeights, setUseWeights] = useState(false);
   const [criteriaModified, setCriteriaModified] = useState(false);
@@ -78,7 +81,7 @@ const ProjectForm = ({ onAddProject, editingProject, onUpdateProject, onCancelEd
         0
       ) / totalWeight;
     } else {
-      score = Object.values(criteria).reduce((sum, value) => sum + value, 0) / 6;
+      score = Object.values(criteria).reduce((sum, value) => sum + value, 0) / Object.values(criteria).length;
     }
     
     score = Math.round(score * 10) / 10;
@@ -157,45 +160,52 @@ const ProjectForm = ({ onAddProject, editingProject, onUpdateProject, onCancelEd
               <TabsContent value="standard">
                 <div className="space-y-2">
                   <CriteriaSlider
-                    label="Impact (prévention et réduction des risques)"
+                    label="Impact et pertinence en SST"
                     description={criteriaDescriptions.impact}
                     value={criteria.impact}
                     onChange={(value) => updateCriteria("impact", value)}
                     colorClass="bg-sst-blue"
                   />
                   <CriteriaSlider
-                    label="Confiance (fiabilité technique)"
-                    description={criteriaDescriptions.confiance}
-                    value={criteria.confiance}
-                    onChange={(value) => updateCriteria("confiance", value)}
+                    label="Excellence scientifique et innovation"
+                    description={criteriaDescriptions.excellence}
+                    value={criteria.excellence}
+                    onChange={(value) => updateCriteria("excellence", value)}
                     colorClass="bg-sst-blue"
                   />
                   <CriteriaSlider
-                    label="Facilité (mise en œuvre)"
-                    description={criteriaDescriptions.facilite}
-                    value={criteria.facilite}
-                    onChange={(value) => updateCriteria("facilite", value)}
+                    label="Faisabilité et maturité du projet"
+                    description={criteriaDescriptions.faisabilite}
+                    value={criteria.faisabilite}
+                    onChange={(value) => updateCriteria("faisabilite", value)}
                     colorClass="bg-sst-blue"
                   />
                   <CriteriaSlider
-                    label="Acceptabilité terrain (adoption)"
+                    label="Gouvernance, éthique et conformité"
+                    description={criteriaDescriptions.gouvernance}
+                    value={criteria.gouvernance}
+                    onChange={(value) => updateCriteria("gouvernance", value)}
+                    colorClass="bg-sst-dark-blue"
+                  />
+                  <CriteriaSlider
+                    label="Sécurité, robustesse et gestion des risques"
+                    description={criteriaDescriptions.securite}
+                    value={criteria.securite}
+                    onChange={(value) => updateCriteria("securite", value)}
+                    colorClass="bg-sst-dark-blue"
+                  />
+                  <CriteriaSlider
+                    label="Acceptabilité et valeur pour les parties prenantes"
                     description={criteriaDescriptions.acceptabilite}
                     value={criteria.acceptabilite}
                     onChange={(value) => updateCriteria("acceptabilite", value)}
                     colorClass="bg-sst-dark-blue"
                   />
                   <CriteriaSlider
-                    label="Valeur réglementaire (conformité)"
-                    description={criteriaDescriptions.valeurReglementaire}
-                    value={criteria.valeurReglementaire}
-                    onChange={(value) => updateCriteria("valeurReglementaire", value)}
-                    colorClass="bg-sst-dark-blue"
-                  />
-                  <CriteriaSlider
-                    label="Alignement éthique (transparence, équité)"
-                    description={criteriaDescriptions.alignementEthique}
-                    value={criteria.alignementEthique}
-                    onChange={(value) => updateCriteria("alignementEthique", value)}
+                    label="Exploitation, diffusion et pérennité"
+                    description={criteriaDescriptions.perennite}
+                    value={criteria.perennite}
+                    onChange={(value) => updateCriteria("perennite", value)}
                     colorClass="bg-sst-dark-blue"
                   />
                 </div>
@@ -206,12 +216,13 @@ const ProjectForm = ({ onAddProject, editingProject, onUpdateProject, onCancelEd
                   {Object.entries(criteria).map(([key, value]) => {
                     const keyTyped = key as keyof Criteria;
                     const label = {
-                      impact: "Impact",
-                      confiance: "Confiance",
-                      facilite: "Facilité",
+                      impact: "Impact et pertinence",
+                      excellence: "Excellence et innovation",
+                      faisabilite: "Faisabilité et maturité",
+                      gouvernance: "Gouvernance et éthique",
+                      securite: "Sécurité et robustesse",
                       acceptabilite: "Acceptabilité terrain",
-                      valeurReglementaire: "Valeur réglementaire",
-                      alignementEthique: "Alignement éthique"
+                      perennite: "Pérennité et diffusion"
                     }[keyTyped];
                     
                     return (

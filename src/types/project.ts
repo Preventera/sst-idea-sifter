@@ -1,11 +1,12 @@
 
 export interface Criteria {
   impact: number;
-  confiance: number;
-  facilite: number;
+  excellence: number;
+  faisabilite: number;
+  gouvernance: number;
+  securite: number;
   acceptabilite: number;
-  valeurReglementaire: number;
-  alignementEthique: number;
+  perennite: number;
 }
 
 export interface Project {

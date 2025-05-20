@@ -35,11 +35,12 @@ const ProjectList = ({ projects, onEdit, onDelete }: ProjectListProps) => {
             <TableHead className="w-12">Rang</TableHead>
             <TableHead>Projet</TableHead>
             <TableHead className="hidden md:table-cell">Impact</TableHead>
-            <TableHead className="hidden md:table-cell">Conf.</TableHead>
-            <TableHead className="hidden md:table-cell">Facil.</TableHead>
-            <TableHead className="hidden md:table-cell">Accept.</TableHead>
-            <TableHead className="hidden md:table-cell">Règl.</TableHead>
-            <TableHead className="hidden md:table-cell">Éthique</TableHead>
+            <TableHead className="hidden md:table-cell">Excel.</TableHead>
+            <TableHead className="hidden md:table-cell">Faisab.</TableHead>
+            <TableHead className="hidden lg:table-cell">Gouv.</TableHead>
+            <TableHead className="hidden lg:table-cell">Sécurité</TableHead>
+            <TableHead className="hidden lg:table-cell">Accept.</TableHead>
+            <TableHead className="hidden lg:table-cell">Péren.</TableHead>
             <TableHead>Score</TableHead>
             <TableHead className="w-[100px] text-right">Actions</TableHead>
           </TableRow>
@@ -55,22 +56,24 @@ const ProjectList = ({ projects, onEdit, onDelete }: ProjectListProps) => {
               </TableCell>
               <TableCell className="font-medium">{project.name}</TableCell>
               <TableCell className="hidden md:table-cell">{project.criteria.impact}</TableCell>
-              <TableCell className="hidden md:table-cell">{project.criteria.confiance}</TableCell>
-              <TableCell className="hidden md:table-cell">{project.criteria.facilite}</TableCell>
-              <TableCell className="hidden md:table-cell">{project.criteria.acceptabilite}</TableCell>
-              <TableCell className="hidden md:table-cell">{project.criteria.valeurReglementaire}</TableCell>
-              <TableCell className="hidden md:table-cell">{project.criteria.alignementEthique}</TableCell>
+              <TableCell className="hidden md:table-cell">{project.criteria.excellence}</TableCell>
+              <TableCell className="hidden md:table-cell">{project.criteria.faisabilite}</TableCell>
+              <TableCell className="hidden lg:table-cell">{project.criteria.gouvernance}</TableCell>
+              <TableCell className="hidden lg:table-cell">{project.criteria.securite}</TableCell>
+              <TableCell className="hidden lg:table-cell">{project.criteria.acceptabilite}</TableCell>
+              <TableCell className="hidden lg:table-cell">{project.criteria.perennite}</TableCell>
               <TableCell>
                 <Badge className={`text-base px-2 ${getScoreColor(project.score).replace('bg-', 'bg-opacity-50 bg-')}`}>
                   {project.score}
                 </Badge>
                 <div className="md:hidden mt-2 grid grid-cols-3 gap-1">
                   <span className="text-xs">I: {project.criteria.impact}</span>
-                  <span className="text-xs">C: {project.criteria.confiance}</span>
-                  <span className="text-xs">F: {project.criteria.facilite}</span>
+                  <span className="text-xs">E: {project.criteria.excellence}</span>
+                  <span className="text-xs">F: {project.criteria.faisabilite}</span>
+                  <span className="text-xs">G: {project.criteria.gouvernance}</span>
+                  <span className="text-xs">S: {project.criteria.securite}</span>
                   <span className="text-xs">A: {project.criteria.acceptabilite}</span>
-                  <span className="text-xs">R: {project.criteria.valeurReglementaire}</span>
-                  <span className="text-xs">E: {project.criteria.alignementEthique}</span>
+                  <span className="text-xs">P: {project.criteria.perennite}</span>
                 </div>
               </TableCell>
               <TableCell className="text-right space-x-1">
