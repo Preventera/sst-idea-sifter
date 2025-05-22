@@ -26,15 +26,16 @@ const PriorityInfo = ({ scianSectorId, priorityScore, priorityLevel }: PriorityI
   
   const level = priorityLevel || getPriorityLevel(priorityScore || 0);
   
-  const alertVariant = 
-    level === 'high' ? "success" : 
-    level === 'medium' ? "warning" : 
-    "destructive";
+  // Use className instead of variant for styling based on priority level
+  const alertClassName = 
+    level === 'high' ? "border-green-500 bg-green-50" : 
+    level === 'medium' ? "border-yellow-500 bg-yellow-50" : 
+    "border-red-500 bg-red-50";
   
   const alertIcon = 
-    level === 'high' ? <CheckCircle className="h-4 w-4" /> : 
-    level === 'medium' ? <AlertTriangle className="h-4 w-4" /> : 
-    <Info className="h-4 w-4" />;
+    level === 'high' ? <CheckCircle className="h-4 w-4 text-green-500" /> : 
+    level === 'medium' ? <AlertTriangle className="h-4 w-4 text-yellow-500" /> : 
+    <Info className="h-4 w-4 text-red-500" />;
 
   const levelText = getPriorityText(level);
   
@@ -47,9 +48,11 @@ const PriorityInfo = ({ scianSectorId, priorityScore, priorityLevel }: PriorityI
 
   return (
     <div className="mb-6 space-y-4">
-      <Alert variant={alertVariant}>
+      <Alert className={alertClassName}>
         {alertIcon}
-        <AlertTitle>Priorisation sectorielle {levelText}</AlertTitle>
+        <AlertTitle className={level === 'high' ? "text-green-800" : level === 'medium' ? "text-yellow-800" : "text-red-800"}>
+          Priorisation sectorielle {levelText}
+        </AlertTitle>
         <AlertDescription>
           Ce projet dans le secteur <strong>{sector.name}</strong> obtient un score de priorisation 
           de <strong>{priorityScore?.toFixed(2) || "N/A"}</strong>/5 (niveau {levelText.toLowerCase()})
