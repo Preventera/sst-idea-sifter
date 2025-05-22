@@ -2,6 +2,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Project } from "../types/project";
+import { SCIAN_SECTORS, getPriorityText } from "../data/scian-sectors";
 
 interface ExportButtonProps {
   projects: Project[];
@@ -15,6 +16,8 @@ const ExportButton = ({ projects }: ExportButtonProps) => {
     const headers = [
       "Rang",
       "Projet",
+      "Secteur SCIAN",
+      "Priorité sectorielle",
       "Impact",
       "Excellence",
       "Faisabilité",
@@ -25,22 +28,45 @@ const ExportButton = ({ projects }: ExportButtonProps) => {
       "Score Global"
     ];
 
-    // Trier les projets par score
-    const sortedProjects = [...projects].sort((a, b) => b.score - a.score);
+    // Trier les projets par priorité puis par score
+    const sortedProjects = [...projects].sort((a, b) => {
+      if (a.priority && b.priority) {
+        if (a.priority.score !== b.priority.score) {
+          return b.priority.score - a.priority.score;
+        }
+      } else if (a.priority) {
+        return -1;
+      } else if (b.priority) {
+        return 1;
+      }
+      return b.score - a.score;
+    });
 
     // Créer les lignes de données
-    const dataRows = sortedProjects.map((project, index) => [
-      (index + 1).toString(),
-      project.name,
-      project.criteria.impact.toString(),
-      project.criteria.excellence.toString(),
-      project.criteria.faisabilite.toString(),
-      project.criteria.gouvernance.toString(),
-      project.criteria.securite.toString(),
-      project.criteria.acceptabilite.toString(),
-      project.criteria.perennite.toString(),
-      project.score.toString()
-    ]);
+    const dataRows = sortedProjects.map((project, index) => {
+      const sectorName = project.scianSectorId 
+        ? SCIAN_SECTORS.find(s => s.id === project.scianSectorId)?.name || '-' 
+        : '-';
+      
+      const priority = project.priority 
+        ? getPriorityText(project.priority.level) 
+        : '-';
+        
+      return [
+        (index + 1).toString(),
+        project.name,
+        sectorName,
+        priority,
+        project.criteria.impact.toString(),
+        project.criteria.excellence.toString(),
+        project.criteria.faisabilite.toString(),
+        project.criteria.gouvernance.toString(),
+        project.criteria.securite.toString(),
+        project.criteria.acceptabilite.toString(),
+        project.criteria.perennite.toString(),
+        project.score.toString()
+      ];
+    });
 
     // Combiner les en-têtes et les données
     const csvContent = [

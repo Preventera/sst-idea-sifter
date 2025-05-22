@@ -14,4 +14,9 @@ export interface Project {
   name: string;
   criteria: Criteria;
   score: number;
+  scianSectorId?: string; // L'ID du secteur SCIAN (optionnel)
+  priority?: {
+    score: number;     // Score calculé selon les critères du secteur
+    level: 'high' | 'medium' | 'low';  // Niveau de priorité
+  };
 }

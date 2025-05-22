@@ -6,6 +6,7 @@ import { Edit, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Project } from "../types/project";
 import { getScoreColor } from "./criteria-slider";
+import { getPriorityText } from "../data/scian-sectors";
 
 interface ProjectListProps {
   projects: Project[];
@@ -25,7 +26,21 @@ const ProjectList = ({ projects, onEdit, onDelete }: ProjectListProps) => {
     );
   }
 
-  const sortedProjects = [...projects].sort((a, b) => b.score - a.score);
+  const sortedProjects = [...projects].sort((a, b) => {
+    // D'abord par priorité sectorielle (si disponible)
+    if (a.priority && b.priority) {
+      if (a.priority.score !== b.priority.score) {
+        return b.priority.score - a.priority.score;
+      }
+    } else if (a.priority) {
+      return -1; // a a une priorité, b n'en a pas
+    } else if (b.priority) {
+      return 1; // b a une priorité, a n'en a pas
+    }
+    
+    // Ensuite par score de critères
+    return b.score - a.score;
+  });
 
   return (
     <div className="border rounded-lg overflow-hidden">
@@ -42,6 +57,7 @@ const ProjectList = ({ projects, onEdit, onDelete }: ProjectListProps) => {
             <TableHead className="hidden lg:table-cell">Accept.</TableHead>
             <TableHead className="hidden lg:table-cell">Péren.</TableHead>
             <TableHead>Score</TableHead>
+            <TableHead>Priorité</TableHead>
             <TableHead className="w-[100px] text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -75,6 +91,15 @@ const ProjectList = ({ projects, onEdit, onDelete }: ProjectListProps) => {
                   <span className="text-xs">A: {project.criteria.acceptabilite}</span>
                   <span className="text-xs">P: {project.criteria.perennite}</span>
                 </div>
+              </TableCell>
+              <TableCell>
+                {project.priority ? (
+                  <Badge className={`text-xs px-2 ${project.priority.level === 'high' ? 'bg-green-100 text-green-700' : project.priority.level === 'medium' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
+                    {getPriorityText(project.priority.level)}
+                  </Badge>
+                ) : (
+                  <span className="text-xs text-gray-500">Non définie</span>
+                )}
               </TableCell>
               <TableCell className="text-right space-x-1">
                 <Button

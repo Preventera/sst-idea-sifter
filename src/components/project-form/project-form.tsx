@@ -6,10 +6,12 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Project, Criteria } from "../../types/project";
+import { Project } from "../../types/project";
 
-import { ProjectFormProps, useProjectForm, initialCriteria } from "./use-project-form";
+import { ProjectFormProps, useProjectForm } from "./use-project-form";
 import ProjectNameInput from "./project-name-input";
+import ScianSectorSelect from "./scian-sector-select";
+import PriorityInfo from "./priority-info";
 import StandardCriteria from "./standard-criteria";
 import WeightedCriteria from "./weighted-criteria";
 
@@ -19,6 +21,8 @@ const ProjectForm = ({ onAddProject, editingProject, onUpdateProject, onCancelEd
     name,
     setName,
     criteria,
+    scianSectorId,
+    setScianSectorId,
     weights,
     useWeights,
     setUseWeights,
@@ -27,6 +31,7 @@ const ProjectForm = ({ onAddProject, editingProject, onUpdateProject, onCancelEd
     updateCriteria,
     updateWeight,
     calculateScore,
+    priority,
   } = useProjectForm({ onAddProject, editingProject, onUpdateProject, onCancelEdit });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -53,7 +58,9 @@ const ProjectForm = ({ onAddProject, editingProject, onUpdateProject, onCancelEd
       id: editingProject?.id || Date.now().toString(),
       name,
       criteria,
-      score
+      score,
+      scianSectorId,
+      priority
     };
 
     if (editingProject) {
@@ -81,6 +88,17 @@ const ProjectForm = ({ onAddProject, editingProject, onUpdateProject, onCancelEd
         </CardHeader>
         <CardContent>
           <ProjectNameInput name={name} setName={setName} />
+          
+          <ScianSectorSelect 
+            selectedSectorId={scianSectorId} 
+            setSelectedSectorId={setScianSectorId} 
+          />
+          
+          {scianSectorId && <PriorityInfo 
+            scianSectorId={scianSectorId}
+            priorityScore={priority?.score}
+            priorityLevel={priority?.level}
+          />}
 
           <Alert className="mb-4">
             <AlertCircle className="h-4 w-4" />
