@@ -18,5 +18,14 @@ export interface Project {
   priority?: {
     score: number;     // Score calculé selon les critères du secteur
     level: 'high' | 'medium' | 'low';  // Niveau de priorité
+    details?: {
+      conformiteLSST: number;
+      mortalityImpact: number;
+      sectorPrevalence: number;
+      aiPreventivePotential: number;
+      legislationCompliance: number;
+      dataAvailability: number;
+      implementationDelay: number;
+    }; // Détails des scores par critère
   };
 }

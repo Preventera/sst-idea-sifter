@@ -1,85 +1,158 @@
 
 import React from "react";
-import { 
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger 
-} from "@/components/ui/accordion";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertTriangle, CheckCircle, Info } from "lucide-react";
+import { SCIAN_SECTORS, getPriorityText, getPriorityLevel } from "@/data/scian-sectors";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ScianSector, SCIAN_SECTORS, PRIORITY_WEIGHTS, getPriorityText } from "@/data/scian-sectors";
 
 interface PriorityInfoProps {
-  scianSectorId: string | undefined;
-  priorityScore: number | undefined;
-  priorityLevel: 'high' | 'medium' | 'low' | undefined;
+  scianSectorId: string;
+  priorityScore?: number;
+  priorityLevel?: 'high' | 'medium' | 'low';
 }
 
 const PriorityInfo = ({ scianSectorId, priorityScore, priorityLevel }: PriorityInfoProps) => {
-  if (!scianSectorId) return null;
-
   const sector = SCIAN_SECTORS.find(s => s.id === scianSectorId);
+  
   if (!sector) return null;
   
+  const level = priorityLevel || getPriorityLevel(priorityScore || 0);
+  
+  const alertVariant = 
+    level === 'high' ? "success" : 
+    level === 'medium' ? "warning" : 
+    "destructive";
+  
+  const alertIcon = 
+    level === 'high' ? <CheckCircle className="h-4 w-4" /> : 
+    level === 'medium' ? <AlertTriangle className="h-4 w-4" /> : 
+    <Info className="h-4 w-4" />;
+
+  const levelText = getPriorityText(level);
+  
+  const getBadgeColor = (value: number) => {
+    if (value >= 4) return "bg-green-100 text-green-800";
+    if (value >= 3) return "bg-blue-100 text-blue-800";
+    if (value >= 2) return "bg-yellow-100 text-yellow-800";
+    return "bg-red-100 text-red-800";
+  };
+
   return (
-    <div className="mb-6 border rounded-lg p-4 bg-gray-50">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold">Priorisation sectorielle</h3>
-        {priorityLevel && (
-          <Badge variant="outline" className={`ml-2 ${priorityLevel === 'high' ? 'bg-green-100 text-green-700' : priorityLevel === 'medium' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
-            {priorityScore && `${priorityScore.toFixed(2)} - `}{getPriorityText(priorityLevel)}
-          </Badge>
-        )}
-      </div>
-      
-      <Alert className="mb-4">
+    <div className="mb-6 space-y-4">
+      <Alert variant={alertVariant}>
+        {alertIcon}
+        <AlertTitle>Priorisation sectorielle {levelText}</AlertTitle>
         <AlertDescription>
-          Secteur: <strong>{sector.name}</strong> - La priorisation est calculée automatiquement selon les facteurs de risque de ce secteur
+          Ce projet dans le secteur <strong>{sector.name}</strong> obtient un score de priorisation 
+          de <strong>{priorityScore?.toFixed(2) || "N/A"}</strong>/5 (niveau {levelText.toLowerCase()})
+          selon les critères HSE du secteur.
         </AlertDescription>
       </Alert>
-      
-      <Accordion type="single" collapsible className="w-full">
-        <AccordionItem value="factors">
-          <AccordionTrigger>Facteurs de risque du secteur</AccordionTrigger>
-          <AccordionContent>
-            <div className="text-sm">
-              <div className="grid grid-cols-2 gap-2 mb-3">
-                <div className="font-medium">Facteur</div>
-                <div className="font-medium text-right">Valeur (1-5)</div>
-                
-                <div>Impact sur la mortalité</div>
-                <div className="text-right">{sector.riskFactors.mortalityImpact} <span className="text-xs text-gray-500">× {PRIORITY_WEIGHTS.mortalityImpact * 100}%</span></div>
-                
-                <div>Prévalence sectorielle</div>
-                <div className="text-right">{sector.riskFactors.sectorPrevalence} <span className="text-xs text-gray-500">× {PRIORITY_WEIGHTS.sectorPrevalence * 100}%</span></div>
-                
-                <div>Potentiel préventif IA</div>
-                <div className="text-right">{sector.riskFactors.aiPreventivePotential} <span className="text-xs text-gray-500">× {PRIORITY_WEIGHTS.aiPreventivePotential * 100}%</span></div>
-                
-                <div>Conformité législative</div>
-                <div className="text-right">{sector.riskFactors.legislationCompliance} <span className="text-xs text-gray-500">× {PRIORITY_WEIGHTS.legislationCompliance * 100}%</span></div>
-                
-                <div>Disponibilité des données</div>
-                <div className="text-right">{sector.riskFactors.dataAvailability} <span className="text-xs text-gray-500">× {PRIORITY_WEIGHTS.dataAvailability * 100}%</span></div>
-                
-                <div>Délai de mise en œuvre</div>
-                <div className="text-right">{sector.riskFactors.implementationDelay} <span className="text-xs text-gray-500">× {PRIORITY_WEIGHTS.implementationDelay * 100}%</span></div>
+
+      {sector.statistics && (
+        <div className="border rounded-lg p-4 bg-gray-50">
+          <h4 className="font-medium mb-2">Statistiques d'accidents - {sector.name}</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+            <div>
+              <span className="font-medium">Accidents annuels:</span> {sector.statistics.accidentCount}
+            </div>
+            <div>
+              <span className="font-medium">Taux de mortalité:</span> {(sector.statistics.mortalityRate || 0) * 100}%
+            </div>
+            
+            {sector.statistics.accidentCauses && (
+              <div className="col-span-1 md:col-span-2">
+                <span className="font-medium">Causes principales:</span>{" "}
+                {sector.statistics.accidentCauses.join(", ")}
               </div>
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-        <AccordionItem value="legend">
-          <AccordionTrigger>Légende des priorités</AccordionTrigger>
-          <AccordionContent>
-            <div className="text-sm space-y-1">
-              <div className="flex items-center"><span className="inline-block w-4 h-4 bg-green-100 mr-2 rounded"></span> &gt; 4,2 = 🟢 Haute priorité</div>
-              <div className="flex items-center"><span className="inline-block w-4 h-4 bg-yellow-100 mr-2 rounded"></span> 3,5 - 4,2 = 🟡 Priorité moyenne</div>
-              <div className="flex items-center"><span className="inline-block w-4 h-4 bg-red-100 mr-2 rounded"></span> &lt; 3,5 = 🔴 Faible priorité</div>
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
+            )}
+            
+            {sector.statistics.keyPreventionAreas && (
+              <div className="col-span-1 md:col-span-2">
+                <span className="font-medium">Domaines de prévention clés:</span>{" "}
+                {sector.statistics.keyPreventionAreas.join(", ")}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Critère de priorisation</TableHead>
+            <TableHead className="text-right">Score</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow>
+            <TableCell>Impact sur la mortalité (25%)</TableCell>
+            <TableCell className="text-right">
+              <Badge className={getBadgeColor(sector.riskFactors.mortalityImpact)}>
+                {sector.riskFactors.mortalityImpact}/5
+              </Badge>
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell>Prévalence sectorielle (15%)</TableCell>
+            <TableCell className="text-right">
+              <Badge className={getBadgeColor(sector.riskFactors.sectorPrevalence)}>
+                {sector.riskFactors.sectorPrevalence}/5
+              </Badge>
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell>Potentiel préventif par l'IA (20%)</TableCell>
+            <TableCell className="text-right">
+              <Badge className={getBadgeColor(sector.riskFactors.aiPreventivePotential)}>
+                {sector.riskFactors.aiPreventivePotential}/5
+              </Badge>
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell>Conformité LSST / Législation (20%)</TableCell>
+            <TableCell className="text-right">
+              <Badge className={getBadgeColor(sector.riskFactors.legislationCompliance)}>
+                {sector.riskFactors.legislationCompliance}/5
+              </Badge>
+            </TableCell>
+          </TableRow>
+          {sector.riskFactors.conformiteLSST && (
+            <TableRow>
+              <TableCell>Conformité obligations prévention (20%)</TableCell>
+              <TableCell className="text-right">
+                <Badge className={getBadgeColor(sector.riskFactors.conformiteLSST)}>
+                  {sector.riskFactors.conformiteLSST}/5
+                </Badge>
+              </TableCell>
+            </TableRow>
+          )}
+          <TableRow>
+            <TableCell>Disponibilité des données (10%)</TableCell>
+            <TableCell className="text-right">
+              <Badge className={getBadgeColor(sector.riskFactors.dataAvailability)}>
+                {sector.riskFactors.dataAvailability}/5
+              </Badge>
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell>Délai de mise en œuvre estimé (10%)</TableCell>
+            <TableCell className="text-right">
+              <Badge className={getBadgeColor(sector.riskFactors.implementationDelay)}>
+                {sector.riskFactors.implementationDelay}/5
+              </Badge>
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
     </div>
   );
 };

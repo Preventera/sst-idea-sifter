@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Criteria, Project } from "../../types/project";
-import { calculateSectorPriorityScore, getPriorityLevel, SCIAN_SECTORS } from "../../data/scian-sectors";
+import { calculateSectorPriorityScore, calculateDetailedPriority, getPriorityLevel, SCIAN_SECTORS } from "../../data/scian-sectors";
 
 export const initialCriteria: Criteria = {
   impact: 5,
@@ -61,20 +61,14 @@ export function useProjectForm({ onAddProject, editingProject, onUpdateProject }
     return Math.round(score * 10) / 10;
   }
 
-  // Calcul de la priorité sectorielle
+  // Calcul de la priorité sectorielle détaillée
   const calculatePriority = () => {
     if (!scianSectorId) return undefined;
     
     const sector = SCIAN_SECTORS.find(s => s.id === scianSectorId);
     if (!sector) return undefined;
     
-    const score = calculateSectorPriorityScore(sector);
-    const level = getPriorityLevel(score);
-    
-    return {
-      score,
-      level
-    };
+    return calculateDetailedPriority(sector);
   }
 
   const priority = calculatePriority();

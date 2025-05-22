@@ -11,6 +11,13 @@ export interface ScianSector {
     legislationCompliance: number; // 1-5
     dataAvailability: number; // 1-5
     implementationDelay: number; // 1-5
+    conformiteLSST?: number; // 1-5 (nouveau critère)
+  };
+  statistics?: {
+    accidentCount?: number;
+    mortalityRate?: number;
+    accidentCauses?: string[];
+    keyPreventionAreas?: string[];
   };
 }
 
@@ -25,7 +32,14 @@ export const SCIAN_SECTORS: ScianSector[] = [
       aiPreventivePotential: 5,
       legislationCompliance: 5,
       dataAvailability: 3,
-      implementationDelay: 3
+      implementationDelay: 3,
+      conformiteLSST: 5
+    },
+    statistics: {
+      accidentCount: 57,
+      mortalityRate: 0.35,
+      accidentCauses: ["Chutes de hauteur", "Écrasement", "Électrocution"],
+      keyPreventionAreas: ["Contrôle des énergies", "Supervision des équipements mobiles"]
     }
   },
   {
@@ -38,7 +52,14 @@ export const SCIAN_SECTORS: ScianSector[] = [
       aiPreventivePotential: 5,
       legislationCompliance: 4,
       dataAvailability: 4,
-      implementationDelay: 3
+      implementationDelay: 3,
+      conformiteLSST: 4
+    },
+    statistics: {
+      accidentCount: 38,
+      mortalityRate: 0.28,
+      accidentCauses: ["Pièces mobiles", "Chutes d'équipement", "Exposition à des substances"],
+      keyPreventionAreas: ["Supervision humaine", "Détection précoce des risques"]
     }
   },
   {
@@ -51,7 +72,14 @@ export const SCIAN_SECTORS: ScianSector[] = [
       aiPreventivePotential: 5,
       legislationCompliance: 5,
       dataAvailability: 4,
-      implementationDelay: 2
+      implementationDelay: 2,
+      conformiteLSST: 5
+    },
+    statistics: {
+      accidentCount: 29,
+      mortalityRate: 0.22,
+      accidentCauses: ["Éboulements", "Explosions", "Défaillances équipements"],
+      keyPreventionAreas: ["Détection préventive", "Contrôle des environnements confinés"]
     }
   },
   {
@@ -64,7 +92,14 @@ export const SCIAN_SECTORS: ScianSector[] = [
       aiPreventivePotential: 4,
       legislationCompliance: 4,
       dataAvailability: 3,
-      implementationDelay: 3
+      implementationDelay: 3,
+      conformiteLSST: 4
+    },
+    statistics: {
+      accidentCount: 42,
+      mortalityRate: 0.29,
+      accidentCauses: ["Accidents routiers", "Manutention", "Chutes"],
+      keyPreventionAreas: ["Surveillance équipements mobiles", "Analyse prédictive fatigue"]
     }
   },
   {
@@ -77,7 +112,14 @@ export const SCIAN_SECTORS: ScianSector[] = [
       aiPreventivePotential: 4,
       legislationCompliance: 5,
       dataAvailability: 5,
-      implementationDelay: 4
+      implementationDelay: 4,
+      conformiteLSST: 3
+    },
+    statistics: {
+      accidentCount: 36,
+      mortalityRate: 0.08,
+      accidentCauses: ["TMS", "Expositions biologiques", "Risques psychosociaux"],
+      keyPreventionAreas: ["Analyse maladies professionnelles", "Formation adaptive"]
     }
   },
   {
@@ -90,7 +132,14 @@ export const SCIAN_SECTORS: ScianSector[] = [
       aiPreventivePotential: 4,
       legislationCompliance: 3,
       dataAvailability: 2,
-      implementationDelay: 2
+      implementationDelay: 2,
+      conformiteLSST: 3
+    },
+    statistics: {
+      accidentCount: 31,
+      mortalityRate: 0.25,
+      accidentCauses: ["Machines agricoles", "Intoxications", "Chutes"],
+      keyPreventionAreas: ["Contrôle des équipements", "Détection d'expositions"]
     }
   },
   {
@@ -103,7 +152,14 @@ export const SCIAN_SECTORS: ScianSector[] = [
       aiPreventivePotential: 5,
       legislationCompliance: 5,
       dataAvailability: 4,
-      implementationDelay: 3
+      implementationDelay: 3,
+      conformiteLSST: 4
+    },
+    statistics: {
+      accidentCount: 19,
+      mortalityRate: 0.12,
+      accidentCauses: ["Électrocution", "Explosion", "Travaux en hauteur"],
+      keyPreventionAreas: ["Gestion des énergies dangereuses", "Surveillance automatisée"]
     }
   },
   {
@@ -116,7 +172,14 @@ export const SCIAN_SECTORS: ScianSector[] = [
       aiPreventivePotential: 3,
       legislationCompliance: 3,
       dataAvailability: 3,
-      implementationDelay: 4
+      implementationDelay: 4,
+      conformiteLSST: 2
+    },
+    statistics: {
+      accidentCount: 27,
+      mortalityRate: 0.05,
+      accidentCauses: ["Chutes", "Blessures manutention", "Agressions"],
+      keyPreventionAreas: ["Formation adaptive", "Détection des comportements à risque"]
     }
   }
 ];
@@ -128,20 +191,29 @@ export const PRIORITY_WEIGHTS = {
   aiPreventivePotential: 0.20,
   legislationCompliance: 0.20,
   dataAvailability: 0.10,
-  implementationDelay: 0.10
+  implementationDelay: 0.10,
+  conformiteLSST: 0.20 // Nouveau critère avec poids important basé sur LSST
 };
 
 // Calcule le score pondéré pour un secteur
 export function calculateSectorPriorityScore(sector: ScianSector): number {
   const { riskFactors } = sector;
   
-  const score = 
+  // Calculer le score avec les facteurs originaux
+  let score = 
     (riskFactors.mortalityImpact * PRIORITY_WEIGHTS.mortalityImpact) +
     (riskFactors.sectorPrevalence * PRIORITY_WEIGHTS.sectorPrevalence) +
     (riskFactors.aiPreventivePotential * PRIORITY_WEIGHTS.aiPreventivePotential) +
     (riskFactors.legislationCompliance * PRIORITY_WEIGHTS.legislationCompliance) +
     (riskFactors.dataAvailability * PRIORITY_WEIGHTS.dataAvailability) +
     (riskFactors.implementationDelay * PRIORITY_WEIGHTS.implementationDelay);
+
+  // Ajouter le score de conformité LSST si disponible
+  if (riskFactors.conformiteLSST) {
+    score += riskFactors.conformiteLSST * PRIORITY_WEIGHTS.conformiteLSST;
+    // Ajuster pour maintenir l'échelle relative malgré l'ajout d'un critère
+    score = score / (1 + PRIORITY_WEIGHTS.conformiteLSST);
+  }
   
   return Math.round(score * 100) / 100; // Arrondir à 2 décimales
 }
@@ -169,4 +241,28 @@ export function getPriorityText(level: 'high' | 'medium' | 'low'): string {
     case 'medium': return '🟡 Moyenne';
     case 'low': return '🔴 Faible';
   }
+}
+
+// Obtenir les détails de priorité complets
+export function calculateDetailedPriority(sector: ScianSector) {
+  const { riskFactors } = sector;
+  
+  const score = calculateSectorPriorityScore(sector);
+  const level = getPriorityLevel(score);
+  
+  const details = {
+    mortalityImpact: riskFactors.mortalityImpact,
+    sectorPrevalence: riskFactors.sectorPrevalence,
+    aiPreventivePotential: riskFactors.aiPreventivePotential,
+    legislationCompliance: riskFactors.legislationCompliance,
+    dataAvailability: riskFactors.dataAvailability,
+    implementationDelay: riskFactors.implementationDelay,
+    conformiteLSST: riskFactors.conformiteLSST || 3, // Valeur par défaut si non spécifiée
+  };
+  
+  return {
+    score,
+    level,
+    details
+  };
 }

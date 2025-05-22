@@ -6,7 +6,7 @@ import { Edit, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Project } from "../types/project";
 import { getScoreColor } from "./criteria-slider";
-import { getPriorityText } from "../data/scian-sectors";
+import { getPriorityText, SCIAN_SECTORS } from "../data/scian-sectors";
 
 interface ProjectListProps {
   projects: Project[];
@@ -42,6 +42,12 @@ const ProjectList = ({ projects, onEdit, onDelete }: ProjectListProps) => {
     return b.score - a.score;
   });
 
+  const getSectorName = (id?: string) => {
+    if (!id) return "";
+    const sector = SCIAN_SECTORS.find(s => s.id === id);
+    return sector ? sector.name : id;
+  };
+
   return (
     <div className="border rounded-lg overflow-hidden">
       <Table>
@@ -57,6 +63,7 @@ const ProjectList = ({ projects, onEdit, onDelete }: ProjectListProps) => {
             <TableHead className="hidden lg:table-cell">Accept.</TableHead>
             <TableHead className="hidden lg:table-cell">Péren.</TableHead>
             <TableHead>Score</TableHead>
+            <TableHead>Secteur</TableHead>
             <TableHead>Priorité</TableHead>
             <TableHead className="w-[100px] text-right">Actions</TableHead>
           </TableRow>
@@ -91,6 +98,13 @@ const ProjectList = ({ projects, onEdit, onDelete }: ProjectListProps) => {
                   <span className="text-xs">A: {project.criteria.acceptabilite}</span>
                   <span className="text-xs">P: {project.criteria.perennite}</span>
                 </div>
+              </TableCell>
+              <TableCell>
+                {project.scianSectorId ? (
+                  <span className="text-xs">{getSectorName(project.scianSectorId)}</span>
+                ) : (
+                  <span className="text-xs text-gray-400">Non spécifié</span>
+                )}
               </TableCell>
               <TableCell>
                 {project.priority ? (
