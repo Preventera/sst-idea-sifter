@@ -100,7 +100,7 @@ const ProjectFilters = ({
               <SelectItem value="8+">Score ≥ 8</SelectItem>
               <SelectItem value="6+">Score ≥ 6</SelectItem>
               <SelectItem value="4+">Score ≥ 4</SelectItem>
-              <SelectItem value="<4">Score < 4</SelectItem>
+              <SelectItem value="&lt;4">Score &lt; 4</SelectItem>
             </SelectContent>
           </Select>
         </div>
