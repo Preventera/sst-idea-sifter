@@ -104,7 +104,8 @@ const Index = () => {
     });
   }, [projects, searchTerm, priorityFilter, sectorFilter, scoreFilter]);
 
-  const hasActiveFilters = searchTerm || priorityFilter !== "all" || sectorFilter !== "all" || scoreFilter !== "all";
+  // Fix here: Ensure hasActiveFilters is boolean by using Boolean() or !! conversion
+  const hasActiveFilters = !!(searchTerm || priorityFilter !== "all" || sectorFilter !== "all" || scoreFilter !== "all");
 
   const clearFilters = () => {
     setSearchTerm("");
