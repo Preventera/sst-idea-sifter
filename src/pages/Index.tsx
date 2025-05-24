@@ -1,5 +1,4 @@
 
-
 import React, { useState, useMemo } from "react";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { Project } from "@/types/project";
@@ -144,14 +143,14 @@ const Index = () => {
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">G</span>
+                  <span className="text-white font-bold text-lg">I</span>
                 </div>
                 <div>
                   <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                    GenAISafety
+                    IGNITIA
                   </h1>
                   <p className="text-sm text-blue-600 font-medium">
-                    Priorisation de Projets IA en SST
+                    GenAISafety - Priorisation de Projets IA en SST
                   </p>
                 </div>
               </div>
@@ -200,7 +199,7 @@ const Index = () => {
                   className="mr-2"
                 >
                   <FileQuestion className="h-4 w-4 mr-2" />
-                  📋 Questionnaire de cadrage
+                  📋 Questionnaire de cadrage IGNITIA
                 </Button>
                 <Button
                   variant="outline"
@@ -210,7 +209,7 @@ const Index = () => {
                   🚀 Utiliser un modèle
                 </Button>
                 <Badge variant="outline" className="text-xs">
-                  Nouveau ! Templates et questionnaire prêts à l'emploi
+                  Nouveau ! Templates et questionnaire structuré IGNITIA
                 </Badge>
               </div>
             )}
@@ -309,15 +308,15 @@ const Index = () => {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center gap-3 mb-4 md:mb-0">
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold">G</span>
+                <span className="text-white font-bold">I</span>
               </div>
               <div>
-                <p className="text-gray-700 font-medium text-sm">GenAISafety</p>
-                <p className="text-gray-500 text-xs">Priorisation IA-SST</p>
+                <p className="text-gray-700 font-medium text-sm">IGNITIA</p>
+                <p className="text-gray-500 text-xs">GenAISafety - Priorisation IA-SST</p>
               </div>
             </div>
             <p className="text-center text-gray-500 text-sm">
-              © {new Date().getFullYear()} GenAISafety - Générateur interactif de priorisation de projets IA en SST
+              © {new Date().getFullYear()} IGNITIA de GenAISafety - Générateur interactif de priorisation de projets IA en SST
             </p>
           </div>
         </div>

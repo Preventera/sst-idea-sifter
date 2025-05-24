@@ -5,8 +5,25 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { AlertCircle, CheckCircle, FileText, Brain, Database, Settings, Shield, Users, Zap, TrendingUp, Telescope } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+
+interface QuestionOption {
+  id: string;
+  emoji: string;
+  text: string;
+}
+
+interface Question {
+  id: number;
+  text: string;
+  options: QuestionOption[];
+  selectedOption?: string;
+  customResponse?: string;
+}
 
 interface QuestionnaireSection {
   id: string;
@@ -16,15 +33,9 @@ interface QuestionnaireSection {
   questions: Question[];
 }
 
-interface Question {
-  id: number;
-  text: string;
-  response: string;
-}
-
 interface QuestionnaireProps {
   onClose: () => void;
-  onGenerateProject?: (responses: Record<number, string>) => void;
+  onGenerateProject?: (responses: Record<number, { option: string; custom?: string }>) => void;
 }
 
 const QUESTIONNAIRE_SECTIONS: QuestionnaireSection[] = [
@@ -34,192 +45,282 @@ const QUESTIONNAIRE_SECTIONS: QuestionnaireSection[] = [
     icon: <FileText className="h-5 w-5" />,
     description: "Définissez les problèmes à résoudre et les résultats attendus",
     questions: [
-      { id: 1, text: "Quel problème souhaitez-vous résoudre avec une solution agentique ?", response: "" },
-      { id: 2, text: "Quels résultats mesurables attendez-vous de l'intégration d'IA ?", response: "" },
-      { id: 3, text: "Avez-vous identifié les processus critiques pouvant être augmentés par des agents ?", response: "" },
-      { id: 4, text: "Quel est le degré d'autonomie souhaité pour chaque agent ?", response: "" },
-      { id: 5, text: "Quelle est la tolérance au risque opérationnel de votre organisation ?", response: "" },
-      { id: 6, text: "Quels sont les cas d'usage prioritaires à couvrir dans les 6 prochains mois ?", response: "" },
-      { id: 7, text: "Souhaitez-vous que les agents prennent des décisions ou formulent uniquement des recommandations ?", response: "" },
-      { id: 8, text: "Quelles règles métiers doivent toujours être respectées par les agents ?", response: "" },
-      { id: 9, text: "Y a-t-il des contraintes éthiques ou réglementaires propres à votre secteur ?", response: "" },
-      { id: 10, text: "Avez-vous besoin de traçabilité des décisions prises par les agents ?", response: "" }
+      {
+        id: 1,
+        text: "Quels objectifs prioritaires souhaitez-vous atteindre avec une solution IA en SST ?",
+        options: [
+          { id: "reduction", emoji: "🛡", text: "Réduction des incidents et accidents" },
+          { id: "maladies", emoji: "📉", text: "Diminution des maladies professionnelles" },
+          { id: "visibilite", emoji: "🔎", text: "Meilleure visibilité sur les risques émergents" },
+          { id: "conformite", emoji: "📈", text: "Amélioration de la conformité réglementaire" },
+          { id: "individualisation", emoji: "👥", text: "Individualisation de la prévention selon les postes" }
+        ]
+      },
+      {
+        id: 2,
+        text: "Quels processus SST souhaitez-vous automatiser ou renforcer avec des agents ?",
+        options: [
+          { id: "veille", emoji: "📑", text: "Veille réglementaire et gestion documentaire" },
+          { id: "detection", emoji: "🔔", text: "Détection de comportements à risque en temps réel" },
+          { id: "formation", emoji: "🎓", text: "Formation personnalisée et adaptative" },
+          { id: "analyse", emoji: "📊", text: "Analyse prédictive basée sur les incidents passés" },
+          { id: "automatisation", emoji: "⚙", text: "Automatisation de la planification d'audits et contrôles" }
+        ]
+      },
+      {
+        id: 3,
+        text: "Quelles sources de données IA sont disponibles dans votre organisation ?",
+        options: [
+          { id: "rapports", emoji: "📂", text: "Rapports d'incidents, audits, registres SST" },
+          { id: "video", emoji: "📸", text: "Vidéosurveillance et images de zones à risque" },
+          { id: "capteurs", emoji: "🧍", text: "Capteurs portés (EPI, wearables, fatigue)" },
+          { id: "iot", emoji: "🌐", text: "Données IoT (température, bruit, gaz, vibrations)" },
+          { id: "procedures", emoji: "📑", text: "Fiches de poste, fiches de sécurité, procédures" }
+        ]
+      }
     ]
   },
   {
-    id: "structure",
-    title: "Structure du Système Multi-Agent",
+    id: "retours",
+    title: "Types de Retours Attendus",
     icon: <Brain className="h-5 w-5" />,
-    description: "Organisez l'architecture de vos agents et leurs interactions",
+    description: "Définissez les interactions souhaitées avec les agents",
     questions: [
-      { id: 11, text: "Quelles fonctions voulez-vous répartir entre plusieurs agents ?", response: "" },
-      { id: 12, text: "Avez-vous besoin d'un agent coordinateur (orchestrateur) ?", response: "" },
-      { id: 13, text: "Chaque agent doit-il pouvoir s'adresser aux autres ?", response: "" },
-      { id: 14, text: "Souhaitez-vous que les agents partagent une mémoire centrale ?", response: "" },
-      { id: 15, text: "Quels seront les rôles principaux (conformité, formation, détection, etc.) ?", response: "" },
-      { id: 16, text: "Quels types de messages les agents doivent-ils échanger ?", response: "" },
-      { id: 17, text: "L'architecture agentique doit-elle être scalable horizontalement ?", response: "" },
-      { id: 18, text: "Souhaitez-vous intégrer une gestion des rôles et permissions entre agents ?", response: "" },
-      { id: 19, text: "Faut-il prévoir des agents hybrides humains+IA ?", response: "" },
-      { id: 20, text: "Un agent peut-il évoluer ou apprendre seul dans le temps ?", response: "" }
+      {
+        id: 4,
+        text: "Quels types de retours attendez-vous des agents intelligents ?",
+        options: [
+          { id: "alertes", emoji: "🔔", text: "Alertes en temps réel sur risques détectés" },
+          { id: "rapports", emoji: "📋", text: "Rapports périodiques ou automatisés" },
+          { id: "recommandations", emoji: "✅", text: "Recommandations correctives concrètes" },
+          { id: "formations", emoji: "🎯", text: "Ciblage de formations ou rappels" },
+          { id: "dialogue", emoji: "💬", text: "Dialogue personnalisé (type assistant SST)" }
+        ]
+      },
+      {
+        id: 5,
+        text: "Quels sont les contextes de déploiement envisagés ?",
+        options: [
+          { id: "usine", emoji: "🏭", text: "Usine ou site de production industrielle" },
+          { id: "chantier", emoji: "🏗", text: "Chantier de construction ou BTP" },
+          { id: "itinerant", emoji: "🚚", text: "Travailleur isolé ou itinérant" },
+          { id: "bureaux", emoji: "🏢", text: "Bureaux ou environnement tertiaire" },
+          { id: "extreme", emoji: "🌍", text: "Milieu confiné, marin, souterrain, ou extrême" }
+        ]
+      }
     ]
   },
   {
-    id: "donnees",
-    title: "Sources de Données et Connaissances",
-    icon: <Database className="h-5 w-5" />,
-    description: "Identifiez les données disponibles et leur format",
-    questions: [
-      { id: 21, text: "Quelles sont les sources internes à exploiter (PDF, vidéos, rapports, IoT, etc.) ?", response: "" },
-      { id: 22, text: "Les données sont-elles en temps réel, en batch ou mixtes ?", response: "" },
-      { id: 23, text: "Existe-t-il des ontologies métier ou des taxonomies internes ?", response: "" },
-      { id: 24, text: "Faut-il extraire de l'information depuis des documents non structurés ?", response: "" },
-      { id: 25, text: "Avez-vous des historiques d'incidents/accidents ?", response: "" },
-      { id: 26, text: "Quels capteurs IoT ou données contextuelles souhaitez-vous intégrer ?", response: "" },
-      { id: 27, text: "Faut-il intégrer des bases de connaissances réglementaires ?", response: "" },
-      { id: 28, text: "Quels sont les formats principaux à prévoir pour l'ingestion (PDF, DOCX, CSV, images, etc.) ?", response: "" },
-      { id: 29, text: "Des données sensibles doivent-elles être anonymisées avant traitement ?", response: "" },
-      { id: 30, text: "Souhaitez-vous enrichir automatiquement vos documents (métadonnées, catégories, tags) ?", response: "" }
-    ]
-  },
-  {
-    id: "fonctionnalites",
-    title: "Fonctionnalités Spécifiques des Agents",
-    icon: <Settings className="h-5 w-5" />,
-    description: "Définissez les capacités spécialisées de chaque agent",
-    questions: [
-      { id: 31, text: "Souhaitez-vous qu'un agent détecte automatiquement les écarts de conformité ?", response: "" },
-      { id: 32, text: "Quels règlements devez-vous surveiller (ex : INRS, Code du Travail, ISO 45001) ?", response: "" },
-      { id: 33, text: "L'agent doit-il émettre des rapports automatisés ?", response: "" },
-      { id: 34, text: "Doit-il effectuer une veille réglementaire continue ?", response: "" },
-      { id: 35, text: "Peut-il proposer des actions correctives ?", response: "" },
-      { id: 36, text: "Voulez-vous un agent qui analyse les incidents et en déduit des tendances ?", response: "" },
-      { id: 37, text: "Souhaitez-vous des alertes de risque émergent ?", response: "" },
-      { id: 38, text: "Quel type de modèle prédictif souhaitez-vous intégrer ?", response: "" },
-      { id: 39, text: "Souhaitez-vous des recommandations personnalisées par poste ?", response: "" },
-      { id: 40, text: "L'agent doit-il faire du scoring de dangerosité par tâche ?", response: "" },
-      { id: 41, text: "Avez-vous des caméras installées dans les zones à risque ?", response: "" },
-      { id: 42, text: "Souhaitez-vous détecter le non-port d'EPI ?", response: "" },
-      { id: 43, text: "L'agent doit-il différencier les types de comportements dangereux ?", response: "" },
-      { id: 44, text: "Faut-il analyser les flux en direct ou en différé ?", response: "" },
-      { id: 45, text: "Quel niveau de précision est exigé (en % ou en type d'erreur) ?", response: "" },
-      { id: 46, text: "Souhaitez-vous un agent qui propose des modules en fonction du profil et du poste ?", response: "" },
-      { id: 47, text: "Intégrez-vous déjà une plateforme LMS ?", response: "" },
-      { id: 48, text: "L'agent doit-il suivre l'assiduité et les performances ?", response: "" },
-      { id: 49, text: "Souhaitez-vous des simulations VR ou AR pour la formation aux situations d'urgence ?", response: "" },
-      { id: 50, text: "Doit-il recommander des rappels ou des modules à la suite d'un incident ?", response: "" }
-    ]
-  },
-  {
-    id: "securite",
-    title: "Sécurité, Éthique et Gouvernance",
+    id: "risques",
+    title: "Catégories de Risques",
     icon: <Shield className="h-5 w-5" />,
-    description: "Établissez les règles de gouvernance et de sécurité",
+    description: "Priorisez les types de risques à analyser",
     questions: [
-      { id: 51, text: "Qui peut superviser ou corriger un agent ?", response: "" },
-      { id: 52, text: "Quelles sont les règles de sécurité des données à respecter ?", response: "" },
-      { id: 53, text: "Souhaitez-vous une journalisation complète des actions des agents ?", response: "" },
-      { id: 54, text: "Avez-vous besoin de définir une gouvernance pour l'usage des IA ?", response: "" },
-      { id: 55, text: "Les agents doivent-ils pouvoir expliquer leurs décisions aux utilisateurs humains ?", response: "" },
-      { id: 56, text: "Des audits IA doivent-ils être réalisés régulièrement ?", response: "" },
-      { id: 57, text: "Y a-t-il des risques d'usage abusif des fonctions proposées ?", response: "" },
-      { id: 58, text: "Les utilisateurs finaux sont-ils informés de l'usage d'agents ?", response: "" },
-      { id: 59, text: "Des mécanismes de blocage manuel sont-ils nécessaires ?", response: "" },
-      { id: 60, text: "Souhaitez-vous interdire certains types de requêtes ou de suggestions ?", response: "" }
+      {
+        id: 6,
+        text: "Quelles catégories de risques souhaitez-vous prioriser dans l'analyse IA ?",
+        options: [
+          { id: "respiratoires", emoji: "🫁", text: "Risques respiratoires (asthme, poussières, vapeurs)" },
+          { id: "psychosociaux", emoji: "🧠", text: "Risques psychosociaux (stress, isolement, fatigue mentale)" },
+          { id: "physiques", emoji: "💪", text: "Risques physiques (TMS, port de charges)" },
+          { id: "electriques", emoji: "⚡", text: "Risques électriques ou thermiques" },
+          { id: "environnementaux", emoji: "🔥", text: "Risques environnementaux (chaleur, froid, bruit, substances)" }
+        ]
+      },
+      {
+        id: 7,
+        text: "Qui seront les utilisateurs principaux des agents intelligents ?",
+        options: [
+          { id: "operateurs", emoji: "🧑‍🏭", text: "Opérateurs de terrain" },
+          { id: "responsables", emoji: "🧑‍💼", text: "Responsables SST / QHSE" },
+          { id: "maintenance", emoji: "🧑‍🔧", text: "Équipes de maintenance ou logistique" },
+          { id: "rh", emoji: "📊", text: "Gestionnaires RH ou formation" },
+          { id: "auditeurs", emoji: "🔍", text: "Auditeurs internes ou externes" }
+        ]
+      }
     ]
   },
   {
     id: "interaction",
-    title: "Interaction Homme-Agent",
+    title: "Types d'Interaction",
     icon: <Users className="h-5 w-5" />,
-    description: "Concevez l'expérience utilisateur avec les agents",
+    description: "Définissez l'expérience utilisateur souhaitée",
     questions: [
-      { id: 61, text: "Quelle interface souhaitez-vous : chatbot, dashboard, assistant vocal ?", response: "" },
-      { id: 62, text: "Les agents doivent-ils initier des interactions ou attendre des requêtes ?", response: "" },
-      { id: 63, text: "Quel ton doit adopter l'agent (formel, empathique, neutre) ?", response: "" },
-      { id: 64, text: "Doit-il adapter son vocabulaire au profil utilisateur ?", response: "" },
-      { id: 65, text: "Faut-il que l'agent pose des questions de clarification ?", response: "" },
-      { id: 66, text: "L'utilisateur peut-il valider ou rejeter les recommandations de l'agent ?", response: "" },
-      { id: 67, text: "Souhaitez-vous une mémoire courte (session) ou longue (historique) ?", response: "" },
-      { id: 68, text: "Les agents doivent-ils pouvoir reformuler ou résumer l'information ?", response: "" },
-      { id: 69, text: "Faut-il un mode « supervision humaine » ?", response: "" },
-      { id: 70, text: "Les agents peuvent-ils recevoir des feedbacks pour ajuster leur comportement ?", response: "" }
+      {
+        id: 8,
+        text: "Quel type d'interaction attendez-vous avec les agents IA ?",
+        options: [
+          { id: "conversationnel", emoji: "💬", text: "Assistant conversationnel (chat, voix)" },
+          { id: "dashboard", emoji: "📈", text: "Interface de supervision / tableau de bord" },
+          { id: "email", emoji: "📧", text: "Rapports automatisés ou email d'alerte" },
+          { id: "mobile", emoji: "📲", text: "Application mobile pour les opérateurs" },
+          { id: "apprentissage", emoji: "🔁", text: "Système d'apprentissage basé sur les retours utilisateur" }
+        ]
+      },
+      {
+        id: 9,
+        text: "Quelles fonctions de conformité doivent être renforcées ?",
+        options: [
+          { id: "echeances", emoji: "📅", text: "Suivi des échéances réglementaires (audits, formations)" },
+          { id: "documents", emoji: "📄", text: "Contrôle de validité documentaire (fiches de sécurité, plans)" },
+          { id: "tracabilite", emoji: "📦", text: "Traçabilité des équipements et EPI utilisés" },
+          { id: "verification", emoji: "✅", text: "Vérification automatique des exigences INRS / ISO 45001" },
+          { id: "reporting", emoji: "📊", text: "Génération de rapports de conformité" }
+        ]
+      }
+    ]
+  },
+  {
+    id: "indicateurs",
+    title: "Indicateurs et Mesures",
+    icon: <TrendingUp className="h-5 w-5" />,
+    description: "Définissez les métriques de suivi",
+    questions: [
+      {
+        id: 10,
+        text: "Quels indicateurs souhaitez-vous suivre via les agents ?",
+        options: [
+          { id: "accidents", emoji: "🩺", text: "Taux d'accidents ou incidents" },
+          { id: "risques", emoji: "🧭", text: "Indicateurs de risques détectés (anomalies, expositions)" },
+          { id: "bienetre", emoji: "🧘‍♂️", text: "Indicateurs de bien-être ou stress au travail" },
+          { id: "formation", emoji: "📚", text: "Taux de complétion des formations obligatoires" },
+          { id: "actions", emoji: "🏁", text: "Suivi des actions correctives mises en œuvre" }
+        ]
+      },
+      {
+        id: 11,
+        text: "Quels types d'alertes préférez-vous recevoir ?",
+        options: [
+          { id: "critique", emoji: "🚨", text: "Alerte immédiate sur événement critique (chute, incendie)" },
+          { id: "mobile", emoji: "📱", text: "Notification mobile pour les anomalies non urgentes" },
+          { id: "rapport", emoji: "🕒", text: "Rapport journalier ou hebdomadaire automatisé" },
+          { id: "email", emoji: "📩", text: "Email avec recommandations SST contextuelles" },
+          { id: "embarquees", emoji: "📼", text: "Alertes visuelles/sonores via dispositifs embarqués" }
+        ]
+      }
     ]
   },
   {
     id: "deploiement",
-    title: "Déploiement Technique",
+    title: "Déploiement et Autonomie",
     icon: <Zap className="h-5 w-5" />,
-    description: "Planifiez l'infrastructure et l'intégration technique",
+    description: "Planifiez l'infrastructure et l'autonomie des agents",
     questions: [
-      { id: 71, text: "L'agent sera-t-il déployé sur le cloud, en local ou en edge ?", response: "" },
-      { id: 72, text: "Quel est le niveau de tolérance à la latence ?", response: "" },
-      { id: 73, text: "Quelle interopérabilité attendez-vous avec vos systèmes existants (ERP, GMAO, GED) ?", response: "" },
-      { id: 74, text: "Utilisez-vous déjà des API internes ou ouvertes ?", response: "" },
-      { id: 75, text: "Avez-vous une politique de versionning pour les modèles ou règles métier ?", response: "" },
-      { id: 76, text: "Faut-il prévoir un environnement de test séparé du système de production ?", response: "" },
-      { id: 77, text: "Souhaitez-vous utiliser des outils open-source (spaCy, Haystack, YOLOv5) ?", response: "" },
-      { id: 78, text: "Le système doit-il être capable d'auto-déploiement ou CI/CD ?", response: "" },
-      { id: 79, text: "Préférez-vous un modèle en batch (tâches différées) ou temps réel ?", response: "" },
-      { id: 80, text: "Quels sont vos besoins en monitoring (logs, dashboards, alertes) ?", response: "" }
+      {
+        id: 12,
+        text: "Quel degré d'autonomie souhaitez-vous pour les agents ?",
+        options: [
+          { id: "assistance", emoji: "🧑‍💻", text: "Assistance à la décision uniquement" },
+          { id: "recommandations", emoji: "🧠", text: "Recommandations automatiques validables" },
+          { id: "supervision", emoji: "🔁", text: "Exécution automatisée avec supervision humaine" },
+          { id: "autonome", emoji: "🤖", text: "Actions autonomes sur incidents définis" },
+          { id: "validation", emoji: "🛑", text: "Aucune action sans validation manuelle" }
+        ]
+      },
+      {
+        id: 13,
+        text: "À quelle fréquence les agents doivent-ils analyser les données ?",
+        options: [
+          { id: "temps_reel", emoji: "⏱", text: "En continu (temps réel)" },
+          { id: "horaire", emoji: "⏳", text: "Toutes les heures" },
+          { id: "quotidien", emoji: "🕒", text: "Une fois par jour (batch)" },
+          { id: "hebdomadaire", emoji: "📆", text: "Hebdomadaire ou périodique" },
+          { id: "manuel", emoji: "🔀", text: "Sur déclenchement manuel (on-demand)" }
+        ]
+      }
     ]
   },
   {
-    id: "mesure",
-    title: "Mesure d'Impact et KPI",
-    icon: <TrendingUp className="h-5 w-5" />,
-    description: "Définissez les métriques de succès et de performance",
+    id: "technologies",
+    title: "Technologies et Dispositifs",
+    icon: <Settings className="h-5 w-5" />,
+    description: "Identifiez les technologies à intégrer",
     questions: [
-      { id: 81, text: "Quels sont les KPI à suivre pour mesurer le succès du projet ?", response: "" },
-      { id: 82, text: "Quel est le ROI attendu de l'automatisation ?", response: "" },
-      { id: 83, text: "Souhaitez-vous mesurer la réduction des incidents ?", response: "" },
-      { id: 84, text: "Faut-il mesurer le taux d'adoption des outils IA par les utilisateurs ?", response: "" },
-      { id: 85, text: "Avez-vous besoin d'un module de reporting automatique ?", response: "" },
-      { id: 86, text: "Voulez-vous suivre l'évolution des niveaux de conformité ?", response: "" },
-      { id: 87, text: "Souhaitez-vous croiser les KPI IA avec les indicateurs RH, QHSE ou financiers ?", response: "" },
-      { id: 88, text: "Faut-il prévoir une notation par les utilisateurs ?", response: "" },
-      { id: 89, text: "Les recommandations doivent-elles être classées selon leur impact ?", response: "" },
-      { id: 90, text: "Le système doit-il apprendre des résultats obtenus ?", response: "" }
+      {
+        id: 14,
+        text: "Quels dispositifs portés ou embarqués utilisez-vous ?",
+        options: [
+          { id: "epi", emoji: "🦺", text: "EPI connectés (casques, harnais, capteurs de gaz)" },
+          { id: "montres", emoji: "📱", text: "Montres ou bracelets intelligents (vitalité, fatigue)" },
+          { id: "lunettes", emoji: "👁", text: "Lunettes intelligentes (vision, UV, reconnaissance)" },
+          { id: "chaussures", emoji: "👟", text: "Chaussures connectées (détection chute, pression)" },
+          { id: "casques", emoji: "🎧", text: "Casques audio intelligents (bruit, communication)" }
+        ]
+      },
+      {
+        id: 15,
+        text: "Quelles technologies complémentaires aimeriez-vous intégrer ?",
+        options: [
+          { id: "vision", emoji: "🔍", text: "Vision par ordinateur" },
+          { id: "predictive", emoji: "🧠", text: "IA prédictive / machine learning" },
+          { id: "geolocalisation", emoji: "🛰", text: "Géolocalisation (indoor/outdoor)" },
+          { id: "maintenance", emoji: "🛠", text: "Maintenance prédictive des équipements" },
+          { id: "vr", emoji: "🧑‍🏫", text: "Réalité virtuelle / augmentée pour formation" }
+        ]
+      }
     ]
   },
   {
-    id: "evolution",
+    id: "contraintes",
+    title: "Contraintes et Réglementations",
+    icon: <Shield className="h-5 w-5" />,
+    description: "Définissez le cadre réglementaire et les contraintes",
+    questions: [
+      {
+        id: 16,
+        text: "Quelles contraintes réglementaires doivent être impérativement respectées ?",
+        options: [
+          { id: "code_travail", emoji: "📕", text: "Code du Travail (France ou pays concerné)" },
+          { id: "iso", emoji: "📘", text: "Norme ISO 45001 ou OHSAS 18001" },
+          { id: "fds", emoji: "🧾", text: "Fiches de données de sécurité (FDS)" },
+          { id: "rgpd", emoji: "🛡", text: "RGPD / protection des données personnelles" },
+          { id: "confidentialite", emoji: "🔒", text: "Confidentialité & traçabilité des incidents" }
+        ]
+      }
+    ]
+  },
+  {
+    id: "perspectives",
     title: "Perspectives d'Évolution",
     icon: <Telescope className="h-5 w-5" />,
     description: "Anticipez les évolutions futures du système",
     questions: [
-      { id: 91, text: "Souhaitez-vous que les agents apprennent en continu ?", response: "" },
-      { id: 92, text: "L'architecture doit-elle être modulaire et extensible ?", response: "" },
-      { id: 93, text: "Faut-il anticiper l'ajout de nouveaux domaines (environnement, qualité, RH…) ?", response: "" },
-      { id: 94, text: "Quels scénarios futuristes imaginez-vous pour votre système agentique ?", response: "" },
-      { id: 95, text: "Les agents doivent-ils être multilingues ?", response: "" },
-      { id: 96, text: "Souhaitez-vous intégrer la réalité augmentée, le métavers ou des jumeaux numériques ?", response: "" },
-      { id: 97, text: "Faut-il préparer des modèles de simulation d'incidents ?", response: "" },
-      { id: 98, text: "Le système doit-il être compatible avec les normes de l'industrie 5.0 ?", response: "" },
-      { id: 99, text: "Avez-vous des projets d'open innovation ou de co-développement ?", response: "" },
-      { id: 100, text: "Les agents doivent-ils être certifiables ou validés par des tiers ?", response: "" }
+      {
+        id: 17,
+        text: "Comment souhaitez-vous mesurer le ROI global de l'intelligence agentique en SST ?",
+        options: [
+          { id: "economie", emoji: "💶", text: "Économie réalisée sur les coûts d'accidents/incidents" },
+          { id: "temps", emoji: "🕒", text: "Gain de temps sur la gestion documentaire/audits" },
+          { id: "conformite", emoji: "🎯", text: "Amélioration du score de conformité réglementaire" },
+          { id: "engagement", emoji: "👥", text: "Implication accrue des équipes dans les processus SST" },
+          { id: "performance", emoji: "📈", text: "Indicateurs croisés SST + performance opérationnelle" }
+        ]
+      }
     ]
   }
 ];
 
 const Questionnaire = ({ onClose, onGenerateProject }: QuestionnaireProps) => {
   const [currentSection, setCurrentSection] = useState(0);
-  const [responses, setResponses] = useState<Record<number, string>>({});
+  const [responses, setResponses] = useState<Record<number, { option: string; custom?: string }>>({});
   const [isCompleted, setIsCompleted] = useState(false);
 
-  const updateResponse = (questionId: number, response: string) => {
-    setResponses(prev => ({ ...prev, [questionId]: response }));
+  const updateResponse = (questionId: number, option: string, custom?: string) => {
+    setResponses(prev => ({ 
+      ...prev, 
+      [questionId]: { option, custom } 
+    }));
   };
 
   const getCurrentSectionProgress = () => {
     const currentQuestions = QUESTIONNAIRE_SECTIONS[currentSection].questions;
-    const answeredQuestions = currentQuestions.filter(q => responses[q.id]?.trim()).length;
+    const answeredQuestions = currentQuestions.filter(q => responses[q.id]?.option).length;
     return (answeredQuestions / currentQuestions.length) * 100;
   };
 
   const getOverallProgress = () => {
     const totalQuestions = QUESTIONNAIRE_SECTIONS.reduce((sum, section) => sum + section.questions.length, 0);
-    const answeredQuestions = Object.values(responses).filter(r => r.trim()).length;
+    const answeredQuestions = Object.values(responses).filter(r => r.option).length;
     return (answeredQuestions / totalQuestions) * 100;
   };
 
@@ -242,7 +343,10 @@ const Questionnaire = ({ onClose, onGenerateProject }: QuestionnaireProps) => {
       section: section.title,
       questions: section.questions.map(q => ({
         question: q.text,
-        response: responses[q.id] || "Non renseigné"
+        response: responses[q.id] ? {
+          selectedOption: responses[q.id].option,
+          customResponse: responses[q.id].custom || "Non spécifié"
+        } : "Non renseigné"
       }))
     }));
 
@@ -250,7 +354,7 @@ const Questionnaire = ({ onClose, onGenerateProject }: QuestionnaireProps) => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'questionnaire-ia-sst.json';
+    a.download = 'questionnaire-ignitia-sst.json';
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -264,17 +368,17 @@ const Questionnaire = ({ onClose, onGenerateProject }: QuestionnaireProps) => {
               <div className="flex justify-center mb-4">
                 <CheckCircle className="h-16 w-16 text-green-500" />
               </div>
-              <CardTitle className="text-2xl text-green-700">Questionnaire Complété !</CardTitle>
+              <CardTitle className="text-2xl text-green-700">Questionnaire IGNITIA Complété !</CardTitle>
               <p className="text-gray-600">
-                Vous avez répondu à {Object.values(responses).filter(r => r.trim()).length} questions sur 100.
+                Vous avez répondu à {Object.values(responses).filter(r => r.option).length} questions sur {QUESTIONNAIRE_SECTIONS.reduce((sum, section) => sum + section.questions.length, 0)}.
               </p>
             </CardHeader>
             <CardContent className="space-y-4">
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  Vos réponses vous aideront à structurer votre projet IA-SST. Vous pouvez maintenant utiliser ces informations 
-                  pour créer un projet personnalisé dans l'outil de priorisation.
+                  Vos réponses vous aideront à structurer votre projet IA-SST IGNITIA. Ces informations sont maintenant prêtes 
+                  pour être utilisées dans votre processus de priorisation et de cadrage.
                 </AlertDescription>
               </Alert>
               
@@ -284,7 +388,7 @@ const Questionnaire = ({ onClose, onGenerateProject }: QuestionnaireProps) => {
                   Exporter les réponses
                 </Button>
                 <Button variant="outline" onClick={onClose}>
-                  Retour à l'outil
+                  Retour à IGNITIA
                 </Button>
               </div>
             </CardContent>
@@ -304,10 +408,10 @@ const Questionnaire = ({ onClose, onGenerateProject }: QuestionnaireProps) => {
           <div className="flex justify-between items-center mb-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                📋 Questionnaire d'Identification des Besoins IA
+                📋 Questionnaire structuré IGNITIA
               </h1>
               <p className="text-gray-600">
-                Projet agentique en Santé-Sécurité au Travail
+                Identification des besoins IA pour un projet agentique en Santé-Sécurité au Travail (SST)
               </p>
             </div>
             <Button variant="outline" onClick={onClose}>
@@ -320,7 +424,7 @@ const Questionnaire = ({ onClose, onGenerateProject }: QuestionnaireProps) => {
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm font-medium">Progrès global</span>
               <span className="text-sm text-gray-500">
-                {Object.values(responses).filter(r => r.trim()).length} / 100
+                {Object.values(responses).filter(r => r.option).length} / {QUESTIONNAIRE_SECTIONS.reduce((sum, section) => sum + section.questions.length, 0)}
               </span>
             </div>
             <Progress value={getOverallProgress()} className="h-2" />
@@ -363,7 +467,7 @@ const Questionnaire = ({ onClose, onGenerateProject }: QuestionnaireProps) => {
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm font-medium">Progrès de cette section</span>
                 <Badge variant="outline">
-                  {section.questions.filter(q => responses[q.id]?.trim()).length} / {section.questions.length}
+                  {section.questions.filter(q => responses[q.id]?.option).length} / {section.questions.length}
                 </Badge>
               </div>
               <Progress value={getCurrentSectionProgress()} className="h-2" />
@@ -371,18 +475,46 @@ const Questionnaire = ({ onClose, onGenerateProject }: QuestionnaireProps) => {
           </CardHeader>
 
           <CardContent>
-            <div className="space-y-6">
+            <div className="space-y-8">
               {section.questions.map((question) => (
-                <div key={question.id} className="border rounded-lg p-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                <div key={question.id} className="border rounded-lg p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
                     {question.id}. {question.text}
-                  </label>
-                  <Textarea
-                    value={responses[question.id] || ""}
-                    onChange={(e) => updateResponse(question.id, e.target.value)}
-                    placeholder="Votre réponse..."
-                    className="min-h-[80px]"
-                  />
+                  </h3>
+                  
+                  <RadioGroup
+                    value={responses[question.id]?.option || ""}
+                    onValueChange={(value) => updateResponse(question.id, value, responses[question.id]?.custom)}
+                    className="space-y-3"
+                  >
+                    {question.options.map((option) => (
+                      <div key={option.id} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50">
+                        <RadioGroupItem value={option.id} id={`${question.id}-${option.id}`} />
+                        <Label htmlFor={`${question.id}-${option.id}`} className="flex items-center gap-2 cursor-pointer">
+                          <span className="text-lg">{option.emoji}</span>
+                          <span>{option.text}</span>
+                        </Label>
+                      </div>
+                    ))}
+                    
+                    {/* Option "Autre" */}
+                    <div className="flex items-start space-x-3 p-3 rounded-lg border-2 border-dashed border-gray-200">
+                      <RadioGroupItem value="autre" id={`${question.id}-autre`} />
+                      <div className="flex-1">
+                        <Label htmlFor={`${question.id}-autre`} className="flex items-center gap-2 cursor-pointer mb-2">
+                          <span className="text-lg">✏</span>
+                          <span className="font-medium">Autre :</span>
+                        </Label>
+                        <Input
+                          placeholder="Précisez votre réponse..."
+                          value={responses[question.id]?.custom || ""}
+                          onChange={(e) => updateResponse(question.id, responses[question.id]?.option || "autre", e.target.value)}
+                          onClick={() => updateResponse(question.id, "autre", responses[question.id]?.custom || "")}
+                          className="mt-1"
+                        />
+                      </div>
+                    </div>
+                  </RadioGroup>
                 </div>
               ))}
             </div>
