@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from "react";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { Project } from "@/types/project";
@@ -8,22 +7,29 @@ import ExportButton from "@/components/export-button";
 import EnhancedExportButton from "@/components/enhanced-export-button";
 import ProjectTemplates, { ProjectTemplate } from "@/components/project-templates";
 import ProjectFilters from "@/components/project-filters";
+import Questionnaire from "@/components/questionnaire";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { X, TrendingUp, Users, BarChart3 } from "lucide-react";
+import { X, TrendingUp, Users, BarChart3, FileQuestion } from "lucide-react";
 import { calculateDetailedPriority, SCIAN_SECTORS } from "@/data/scian-sectors";
 
 const Index = () => {
   const [projects, setProjects] = useLocalStorage<Project[]>("ia-sst-projects", []);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [showQuestionnaire, setShowQuestionnaire] = useState(false);
   
   // États pour les filtres
   const [searchTerm, setSearchTerm] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [sectorFilter, setSectorFilter] = useState("all");
   const [scoreFilter, setScoreFilter] = useState("all");
+
+  // Si le questionnaire est ouvert, l'afficher en plein écran
+  if (showQuestionnaire) {
+    return <Questionnaire onClose={() => setShowQuestionnaire(false)} />;
+  }
 
   const handleAddProject = (project: Project) => {
     setProjects([...projects, project]);
@@ -184,16 +190,24 @@ const Index = () => {
         <div className="grid gap-8">
           <div>
             {!showTemplates && (
-              <div className="mb-4">
+              <div className="mb-4 flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowQuestionnaire(true)}
+                  className="mr-2"
+                >
+                  <FileQuestion className="h-4 w-4 mr-2" />
+                  📋 Questionnaire de cadrage
+                </Button>
                 <Button
                   variant="outline"
                   onClick={() => setShowTemplates(true)}
-                  className="mr-4"
+                  className="mr-2"
                 >
                   🚀 Utiliser un modèle
                 </Button>
                 <Badge variant="outline" className="text-xs">
-                  Nouveau ! Templates prêts à l'emploi
+                  Nouveau ! Templates et questionnaire prêts à l'emploi
                 </Badge>
               </div>
             )}
