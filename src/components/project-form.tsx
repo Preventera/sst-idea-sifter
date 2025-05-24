@@ -84,7 +84,7 @@ const ProjectForm = ({ onAddProject, editingProject, onUpdateProject, onCancelEd
       score = Object.values(criteria).reduce((sum, value) => sum + value, 0) / Object.values(criteria).length;
     }
     
-    score = Math.round(score * 10) / 10;
+    score = Math.round(score * 100) / 100; // Arrondir à 2 décimales
     
     const project: Project = {
       id: editingProject?.id || Date.now().toString(),

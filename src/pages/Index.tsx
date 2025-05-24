@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo } from "react";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { Project } from "@/types/project";
@@ -77,7 +78,7 @@ const Index = () => {
     return {
       total: totalProjects,
       withPriority: projectsWithPriority,
-      avgScore: Math.round(avgScore * 10) / 10
+      avgScore: Math.round(avgScore * 100) / 100 // Arrondir à 2 décimales
     };
   }, [projects]);
 
@@ -114,11 +115,12 @@ const Index = () => {
   };
 
   const handleSelectTemplate = (template: ProjectTemplate) => {
+    const criteriaScore = Object.values(template.criteria).reduce((sum, value) => sum + value, 0) / Object.values(template.criteria).length;
     const project: Project = {
       id: Date.now().toString(),
       name: template.name,
       criteria: template.criteria,
-      score: Object.values(template.criteria).reduce((sum, value) => sum + value, 0) / Object.values(template.criteria).length,
+      score: Math.round(criteriaScore * 100) / 100, // Arrondir à 2 décimales
       scianSectorId: template.scianSectorId,
       priority: template.scianSectorId ? calculateDetailedPriority(SCIAN_SECTORS.find(s => s.id === template.scianSectorId)!) : undefined
     };

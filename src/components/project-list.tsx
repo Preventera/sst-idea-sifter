@@ -94,7 +94,7 @@ const ProjectList = ({ projects, onEdit, onDelete }: ProjectListProps) => {
                 <TableCell className="hidden lg:table-cell">{project.criteria.perennite}</TableCell>
                 <TableCell>
                   <Badge className={`text-base px-2 ${getScoreColor(project.score).replace('bg-', 'bg-opacity-50 bg-')}`}>
-                    {project.score}
+                    {project.score.toFixed(2)}
                   </Badge>
                   <div className="md:hidden mt-2 grid grid-cols-3 gap-1">
                     <span className="text-xs">I: {project.criteria.impact}</span>

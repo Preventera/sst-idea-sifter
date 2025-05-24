@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Criteria, Project } from "../../types/project";
 import { calculateSectorPriorityScore, calculateDetailedPriority, getPriorityLevel, SCIAN_SECTORS } from "../../data/scian-sectors";
@@ -58,7 +57,7 @@ export function useProjectForm({ onAddProject, editingProject, onUpdateProject }
       score = Object.values(criteria).reduce((sum, value) => sum + value, 0) / Object.values(criteria).length;
     }
     
-    return Math.round(score * 10) / 10;
+    return Math.round(score * 100) / 100; // Arrondir à 2 décimales
   }
 
   // Calcul de la priorité sectorielle détaillée
