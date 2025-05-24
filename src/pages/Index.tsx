@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from "react";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { Project } from "@/types/project";
@@ -26,7 +27,61 @@ const Index = () => {
   const [sectorFilter, setSectorFilter] = useState("all");
   const [scoreFilter, setScoreFilter] = useState("all");
 
-  // Si le questionnaire est ouvert, l'afficher en plein écran
+  // Logique de filtrage - TOUS LES HOOKS DOIVENT ÊTRE APPELÉS AVANT TOUT RETURN CONDITIONNEL
+  const filteredProjects = useMemo(() => {
+    return projects.filter(project => {
+      // Filtrage par terme de recherche
+      if (searchTerm && !project.name.toLowerCase().includes(searchTerm.toLowerCase())) {
+        return false;
+      }
+
+      // Filtrage par priorité
+      if (priorityFilter !== "all") {
+        if (priorityFilter === "undefined" && project.priority) return false;
+        if (priorityFilter !== "undefined" && (!project.priority || project.priority.level !== priorityFilter)) return false;
+      }
+
+      // Filtrage par secteur
+      if (sectorFilter !== "all") {
+        if (sectorFilter === "undefined" && project.scianSectorId) return false;
+        if (sectorFilter !== "undefined" && project.scianSectorId !== sectorFilter) return false;
+      }
+
+      // Filtrage par score
+      if (scoreFilter !== "all") {
+        switch (scoreFilter) {
+          case "8+":
+            return project.score >= 8;
+          case "6+":
+            return project.score >= 6;
+          case "4+":
+            return project.score >= 4;
+          case "<4":
+            return project.score < 4;
+        }
+      }
+
+      return true;
+    });
+  }, [projects, searchTerm, priorityFilter, sectorFilter, scoreFilter]);
+
+  // Fix here: Ensure hasActiveFilters is boolean by using Boolean() or !! conversion
+  const hasActiveFilters = Boolean(searchTerm || priorityFilter !== "all" || sectorFilter !== "all" || scoreFilter !== "all");
+
+  // Statistiques pour le tableau de bord
+  const stats = useMemo(() => {
+    const totalProjects = projects.length;
+    const projectsWithPriority = projects.filter(p => p.priority).length;
+    const avgScore = totalProjects > 0 ? projects.reduce((sum, p) => sum + p.score, 0) / totalProjects : 0;
+    
+    return {
+      total: totalProjects,
+      withPriority: projectsWithPriority,
+      avgScore: Math.round(avgScore * 10) / 10
+    };
+  }, [projects]);
+
+  // Si le questionnaire est ouvert, l'afficher en plein écran - MAINTENANT APRÈS TOUS LES HOOKS
   if (showQuestionnaire) {
     return <Questionnaire onClose={() => setShowQuestionnaire(false)} />;
   }
@@ -72,66 +127,12 @@ const Index = () => {
     setShowTemplates(false);
   };
 
-  // Logique de filtrage
-  const filteredProjects = useMemo(() => {
-    return projects.filter(project => {
-      // Filtrage par terme de recherche
-      if (searchTerm && !project.name.toLowerCase().includes(searchTerm.toLowerCase())) {
-        return false;
-      }
-
-      // Filtrage par priorité
-      if (priorityFilter !== "all") {
-        if (priorityFilter === "undefined" && project.priority) return false;
-        if (priorityFilter !== "undefined" && (!project.priority || project.priority.level !== priorityFilter)) return false;
-      }
-
-      // Filtrage par secteur
-      if (sectorFilter !== "all") {
-        if (sectorFilter === "undefined" && project.scianSectorId) return false;
-        if (sectorFilter !== "undefined" && project.scianSectorId !== sectorFilter) return false;
-      }
-
-      // Filtrage par score
-      if (scoreFilter !== "all") {
-        switch (scoreFilter) {
-          case "8+":
-            return project.score >= 8;
-          case "6+":
-            return project.score >= 6;
-          case "4+":
-            return project.score >= 4;
-          case "<4":
-            return project.score < 4;
-        }
-      }
-
-      return true;
-    });
-  }, [projects, searchTerm, priorityFilter, sectorFilter, scoreFilter]);
-
-  // Fix here: Ensure hasActiveFilters is boolean by using Boolean() or !! conversion
-  const hasActiveFilters = !!(searchTerm || priorityFilter !== "all" || sectorFilter !== "all" || scoreFilter !== "all");
-
   const clearFilters = () => {
     setSearchTerm("");
     setPriorityFilter("all");
     setSectorFilter("all");
     setScoreFilter("all");
   };
-
-  // Statistiques pour le tableau de bord
-  const stats = useMemo(() => {
-    const totalProjects = projects.length;
-    const projectsWithPriority = projects.filter(p => p.priority).length;
-    const avgScore = totalProjects > 0 ? projects.reduce((sum, p) => sum + p.score, 0) / totalProjects : 0;
-    
-    return {
-      total: totalProjects,
-      withPriority: projectsWithPriority,
-      avgScore: Math.round(avgScore * 10) / 10
-    };
-  }, [projects]);
 
   return (
     <div className="min-h-screen bg-gray-50">
