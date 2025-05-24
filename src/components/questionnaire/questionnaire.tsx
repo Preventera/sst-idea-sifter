@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { AlertCircle, CheckCircle, FileText, Brain, Database, Settings, Shield, Users, Zap, TrendingUp, Telescope } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import ResponseAnalysis from "./response-analysis";
 
 interface QuestionOption {
   id: string;
@@ -362,7 +362,7 @@ const Questionnaire = ({ onClose, onGenerateProject }: QuestionnaireProps) => {
   if (isCompleted) {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <Card>
             <CardHeader className="text-center">
               <div className="flex justify-center mb-4">
@@ -391,6 +391,8 @@ const Questionnaire = ({ onClose, onGenerateProject }: QuestionnaireProps) => {
                   Retour à IGNITIA
                 </Button>
               </div>
+
+              <ResponseAnalysis responses={responses} />
             </CardContent>
           </Card>
         </div>
