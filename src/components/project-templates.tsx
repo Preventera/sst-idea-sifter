@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Criteria } from "@/types/project";
-import { Camera, AlertTriangle, Brain, Shield, Eye, Search, Filter, Users, MapPin, Cog, User } from "lucide-react";
+import { Camera, AlertTriangle, Brain, Shield, Eye, Search, Filter, Users, MapPin, Cog, User, FileText, TrendingUp, MessageSquare, HeadphonesIcon, ChartBar, ClipboardCheck, UserCheck, Wrench, Home, Zap, Thermometer, Siren } from "lucide-react";
 
 interface ProjectTemplate {
   id: string;
@@ -36,17 +36,270 @@ const getCategoryIcon = (category: string) => {
 };
 
 const PROJECT_TEMPLATES: ProjectTemplate[] = [
-  // Templates existants
+  // Choix et suivi des EPI (1-10)
   {
-    id: "camera-epi",
-    name: "Caméra intelligente détection EPI",
-    description: "Système de vision par ordinateur pour détecter le port correct des équipements de protection individuelle",
-    icon: <Camera className="h-5 w-5" />,
-    criteria: { impact: 8, excellence: 7, faisabilite: 6, gouvernance: 7, securite: 8, acceptabilite: 6, perennite: 7 },
-    scianSectorId: "23",
-    tags: ["Vision", "EPI", "Temps réel"],
+    id: "ia-recommandation-epi",
+    name: "IA de recommandation d'EPI selon danger identifié",
+    description: "Système intelligent qui recommande automatiquement les EPI appropriés en fonction des dangers détectés sur le lieu de travail",
+    icon: <Shield className="h-5 w-5" />,
+    criteria: { impact: 8, excellence: 7, faisabilite: 8, gouvernance: 7, securite: 8, acceptabilite: 7, perennite: 7 },
+    tags: ["EPI", "Recommandation", "Danger"],
     fonction: "Choix d'EPI",
     categorieELON: "Équipement"
+  },
+  {
+    id: "camera-detection-epi",
+    name: "Caméra IA pour détection du non-port d'EPI",
+    description: "Système de vision par ordinateur pour détecter automatiquement l'absence d'équipements de protection individuelle",
+    icon: <Camera className="h-5 w-5" />,
+    criteria: { impact: 8, excellence: 7, faisabilite: 6, gouvernance: 7, securite: 8, acceptabilite: 6, perennite: 7 },
+    tags: ["Vision", "EPI", "Détection"],
+    fonction: "Suivi conformité EPI",
+    categorieELON: "Équipement"
+  },
+  {
+    id: "scan-equipements-securite",
+    name: "IA mobile de scan des équipements de sécurité",
+    description: "Application mobile pour scanner et vérifier l'état des équipements de sécurité (extincteurs, trousses)",
+    icon: <Wrench className="h-5 w-5" />,
+    criteria: { impact: 7, excellence: 6, faisabilite: 8, gouvernance: 6, securite: 7, acceptabilite: 8, perennite: 7 },
+    tags: ["Mobile", "Scan", "Équipements"],
+    fonction: "Vérification de conformité",
+    categorieELON: "Équipement"
+  },
+  {
+    id: "alerte-seuil-equipement",
+    name: "IA d'alerte en cas de dépassement de seuil sur équipement mobile",
+    description: "Système d'alerte intelligent pour détecter les dépassements de seuils critiques sur équipements mobiles",
+    icon: <Siren className="h-5 w-5" />,
+    criteria: { impact: 8, excellence: 7, faisabilite: 7, gouvernance: 6, securite: 9, acceptabilite: 7, perennite: 7 },
+    tags: ["Alerte", "Seuils", "Mobile"],
+    fonction: "Surveillance équipement",
+    categorieELON: "Équipement"
+  },
+  {
+    id: "detection-usure-epi",
+    name: "Détection IA de détérioration d'EPI par reconnaissance visuelle",
+    description: "Analyse automatique de l'usure et de l'état des équipements de protection par vision artificielle",
+    icon: <Eye className="h-5 w-5" />,
+    criteria: { impact: 7, excellence: 8, faisabilite: 6, gouvernance: 6, securite: 8, acceptabilite: 7, perennite: 7 },
+    tags: ["Vision", "Usure", "Maintenance"],
+    fonction: "Suivi état EPI",
+    categorieELON: "Équipement"
+  },
+
+  // Identification des risques (11-20)
+  {
+    id: "prediction-accident-zone",
+    name: "Prédiction d'accident par zone à risque en temps réel",
+    description: "Modèle de machine learning pour prédire les accidents potentiels selon les zones de travail en temps réel",
+    icon: <TrendingUp className="h-5 w-5" />,
+    criteria: { impact: 9, excellence: 8, faisabilite: 6, gouvernance: 7, securite: 8, acceptabilite: 6, perennite: 7 },
+    tags: ["Machine Learning", "Prédictif", "Zones"],
+    fonction: "Identification des risques",
+    categorieELON: "Lieux"
+  },
+  {
+    id: "ia-comportementale-gestes",
+    name: "IA comportementale pour évaluer les gestes dangereux en atelier",
+    description: "Analyse comportementale en temps réel pour détecter et prévenir les gestes dangereux",
+    icon: <UserCheck className="h-5 w-5" />,
+    criteria: { impact: 8, excellence: 8, faisabilite: 6, gouvernance: 7, securite: 8, acceptabilite: 6, perennite: 7 },
+    tags: ["Comportemental", "Gestes", "Prévention"],
+    fonction: "Identification des comportements à risque",
+    categorieELON: "Nature humaine"
+  },
+  {
+    id: "analyse-climat-thermique",
+    name: "IA pour l'analyse du climat thermique dans les zones de travail",
+    description: "Monitoring et analyse intelligente des conditions thermiques pour prévenir les risques liés à la chaleur",
+    icon: <Thermometer className="h-5 w-5" />,
+    criteria: { impact: 7, excellence: 7, faisabilite: 7, gouvernance: 6, securite: 8, acceptabilite: 7, perennite: 7 },
+    tags: ["Thermique", "Monitoring", "Environnement"],
+    fonction: "Identification de risques émergents",
+    categorieELON: "Lieux"
+  },
+  {
+    id: "matrice-risques-dynamique",
+    name: "Matrice de risques dynamique IA",
+    description: "Système de gestion automatisée de la matrice des risques avec mise à jour en temps réel",
+    icon: <ChartBar className="h-5 w-5" />,
+    criteria: { impact: 8, excellence: 7, faisabilite: 7, gouvernance: 8, securite: 7, acceptabilite: 7, perennite: 8 },
+    tags: ["Matrice", "Risques", "Dynamique"],
+    fonction: "Gestion des risques",
+    categorieELON: "Opérations"
+  },
+  {
+    id: "detection-zones-chute",
+    name: "IA de vision pour détecter les zones de chute",
+    description: "Système de vision artificielle pour identifier automatiquement les zones présentant des risques de chute",
+    icon: <AlertTriangle className="h-5 w-5" />,
+    criteria: { impact: 8, excellence: 7, faisabilite: 6, gouvernance: 7, securite: 9, acceptabilite: 7, perennite: 7 },
+    tags: ["Vision", "Chute", "Sécurité"],
+    fonction: "Identification des risques de chute",
+    categorieELON: "Lieux"
+  },
+
+  // Analyse d'inspections et audits (21-30)
+  {
+    id: "nlp-rapports-inspection",
+    name: "NLP pour analyser les rapports d'inspection internes",
+    description: "Traitement du langage naturel pour extraire des insights des rapports d'inspection et identifier les tendances",
+    icon: <FileText className="h-5 w-5" />,
+    criteria: { impact: 7, excellence: 8, faisabilite: 7, gouvernance: 8, securite: 6, acceptabilite: 8, perennite: 8 },
+    tags: ["NLP", "Inspection", "Analyse"],
+    fonction: "Analyse d'inspections",
+    categorieELON: "Opérations"
+  },
+  {
+    id: "ia-non-conformites-audits",
+    name: "IA pour détecter les non-conformités dans les audits",
+    description: "Système de détection automatique des non-conformités lors des audits de sécurité",
+    icon: <ClipboardCheck className="h-5 w-5" />,
+    criteria: { impact: 8, excellence: 7, faisabilite: 7, gouvernance: 8, securite: 7, acceptabilite: 7, perennite: 8 },
+    tags: ["Audit", "Non-conformité", "Détection"],
+    fonction: "Suivi des inspections",
+    categorieELON: "Opérations"
+  },
+  {
+    id: "evaluation-programme-prevention",
+    name: "IA pour évaluer le respect du programme de prévention sur chantier",
+    description: "Évaluation automatique du respect des programmes de prévention en temps réel sur les chantiers",
+    icon: <Shield className="h-5 w-5" />,
+    criteria: { impact: 8, excellence: 7, faisabilite: 6, gouvernance: 8, securite: 7, acceptabilite: 6, perennite: 7 },
+    tags: ["Prévention", "Chantier", "Conformité"],
+    fonction: "Surveillance de l'application du programme",
+    categorieELON: "Lieux"
+  },
+  {
+    id: "planification-inspections",
+    name: "IA de planification automatique des inspections multisites",
+    description: "Système intelligent de planification et coordination des inspections sur plusieurs sites",
+    icon: <TrendingUp className="h-5 w-5" />,
+    criteria: { impact: 7, excellence: 6, faisabilite: 8, gouvernance: 7, securite: 6, acceptabilite: 8, perennite: 8 },
+    tags: ["Planification", "Multisites", "Coordination"],
+    fonction: "Coordination des inspections",
+    categorieELON: "Opérations"
+  },
+
+  // Gestion des réunions et communication (31-40)
+  {
+    id: "generateur-ordres-jour",
+    name: "IA pour générer automatiquement les ordres du jour des réunions SST",
+    description: "Générateur automatique d'ordres du jour basé sur les priorités et incidents récents",
+    icon: <FileText className="h-5 w-5" />,
+    criteria: { impact: 6, excellence: 7, faisabilite: 8, gouvernance: 7, securite: 5, acceptabilite: 8, perennite: 7 },
+    tags: ["Réunions", "Automation", "Planification"],
+    fonction: "Gestion des réunions",
+    categorieELON: "Opérations"
+  },
+  {
+    id: "generateur-proces-verbaux",
+    name: "Générateur de procès-verbaux intelligent pour le comité",
+    description: "Génération automatique de procès-verbaux structurés pour les réunions du comité SST",
+    icon: <FileText className="h-5 w-5" />,
+    criteria: { impact: 6, excellence: 7, faisabilite: 8, gouvernance: 8, securite: 5, acceptabilite: 8, perennite: 8 },
+    tags: ["PV", "Automation", "Réunions"],
+    fonction: "Gestion automatisée des réunions",
+    categorieELON: "Opérations"
+  },
+  {
+    id: "tableaux-bord-suivi",
+    name: "Tableaux de bord IA pour suivi des recommandations comité",
+    description: "Tableaux de bord intelligents pour suivre l'avancement des recommandations du comité SST",
+    icon: <ChartBar className="h-5 w-5" />,
+    criteria: { impact: 7, excellence: 6, faisabilite: 8, gouvernance: 8, securite: 6, acceptabilite: 8, perennite: 8 },
+    tags: ["Dashboard", "Suivi", "Recommandations"],
+    fonction: "Suivi des recommandations",
+    categorieELON: "Opérations"
+  },
+
+  // Réception des plaintes et suggestions (41-50)
+  {
+    id: "assistant-vocal-plaintes",
+    name: "Assistant vocal pour recueillir les plaintes SST",
+    description: "Interface vocale intelligente pour faciliter la remontée de plaintes et suggestions en matière de SST",
+    icon: <HeadphonesIcon className="h-5 w-5" />,
+    criteria: { impact: 7, excellence: 6, faisabilite: 8, gouvernance: 7, securite: 6, acceptabilite: 8, perennite: 7 },
+    tags: ["Vocal", "Plaintes", "Interface"],
+    fonction: "Réception des suggestions/plaintes",
+    categorieELON: "Nature humaine"
+  },
+  {
+    id: "assistant-plaintes-sentiment",
+    name: "Assistant IA de gestion des plaintes avec sentiment analysis",
+    description: "Système de gestion intelligent des plaintes avec analyse de sentiment pour prioriser les interventions",
+    icon: <MessageSquare className="h-5 w-5" />,
+    criteria: { impact: 7, excellence: 7, faisabilite: 7, gouvernance: 7, securite: 6, acceptabilite: 8, perennite: 7 },
+    tags: ["Sentiment", "Plaintes", "Priorisation"],
+    fonction: "Réception et traitement des suggestions",
+    categorieELON: "Nature humaine"
+  },
+  {
+    id: "boite-idees-numerique",
+    name: "Système de boîte à idées numérique avec IA de tri",
+    description: "Plateforme numérique intelligente pour collecter et trier automatiquement les suggestions des employés",
+    icon: <Brain className="h-5 w-5" />,
+    criteria: { impact: 6, excellence: 6, faisabilite: 8, gouvernance: 7, securite: 6, acceptabilite: 9, perennite: 8 },
+    tags: ["Suggestions", "Tri automatique", "Engagement"],
+    fonction: "Collecte de suggestions",
+    categorieELON: "Nature humaine"
+  },
+
+  // Conformité et rapports (51-60)
+  {
+    id: "rapports-cnesst-auto",
+    name: "Générateur de rapports CNESST automatisés",
+    description: "Génération automatique de rapports conformes aux exigences de la CNESST",
+    icon: <FileText className="h-5 w-5" />,
+    criteria: { impact: 7, excellence: 6, faisabilite: 8, gouvernance: 9, securite: 6, acceptabilite: 8, perennite: 8 },
+    tags: ["CNESST", "Rapports", "Conformité"],
+    fonction: "Rapport annuel / conformité légale",
+    categorieELON: "Opérations"
+  },
+  {
+    id: "suivi-formations-sst",
+    name: "IA pour suivi des formations obligatoires SST",
+    description: "Système de suivi automatisé des formations obligatoires en santé-sécurité",
+    icon: <Users className="h-5 w-5" />,
+    criteria: { impact: 7, excellence: 6, faisabilite: 8, gouvernance: 8, securite: 6, acceptabilite: 8, perennite: 8 },
+    tags: ["Formation", "Suivi", "Conformité"],
+    fonction: "Suivi des obligations légales",
+    categorieELON: "Opérations"
+  },
+
+  // Analyse d'incidents (61-70)
+  {
+    id: "analyse-tendances-incidents",
+    name: "Analyse automatique de tendances d'incidents",
+    description: "Système d'analyse automatique pour identifier les tendances et patterns dans les incidents SST",
+    icon: <TrendingUp className="h-5 w-5" />,
+    criteria: { impact: 8, excellence: 8, faisabilite: 7, gouvernance: 7, securite: 7, acceptabilite: 7, perennite: 8 },
+    tags: ["Tendances", "Incidents", "Analytics"],
+    fonction: "Analyse d'incidents",
+    categorieELON: "Opérations"
+  },
+  {
+    id: "nlp-causes-racines",
+    name: "NLP IA pour extraction de causes racines dans rapports d'accidents",
+    description: "Analyse de texte avancée pour identifier automatiquement les causes profondes des accidents",
+    icon: <Brain className="h-5 w-5" />,
+    criteria: { impact: 8, excellence: 8, faisabilite: 6, gouvernance: 7, securite: 7, acceptabilite: 7, perennite: 8 },
+    tags: ["NLP", "Causes racines", "Accidents"],
+    fonction: "Analyse des causes d'accidents",
+    categorieELON: "Opérations"
+  },
+
+  // Simulation et formation (71-80)
+  {
+    id: "simulation-evacuation",
+    name: "IA pour simuler des scénarios d'évacuation en cas d'urgence",
+    description: "Simulation intelligente de scénarios d'évacuation pour optimiser les plans d'urgence",
+    icon: <Home className="h-5 w-5" />,
+    criteria: { impact: 8, excellence: 8, faisabilite: 6, gouvernance: 7, securite: 9, acceptabilite: 7, perennite: 7 },
+    tags: ["Évacuation", "Simulation", "Urgence"],
+    fonction: "Gestion des interventions d'urgence",
+    categorieELON: "Lieux"
   },
   {
     id: "fatigue-detection",
@@ -60,198 +313,39 @@ const PROJECT_TEMPLATES: ProjectTemplate[] = [
     categorieELON: "Nature humaine"
   },
 
-  // 100 nouveaux modèles de projets IA-SST
-  {
-    id: "ia-recommandation-epi",
-    name: "IA de recommandation d'EPI selon danger identifié",
-    description: "Système intelligent qui recommande automatiquement les EPI appropriés en fonction des dangers détectés sur le lieu de travail",
-    icon: getCategoryIcon("Équipement"),
-    criteria: { impact: 8, excellence: 7, faisabilite: 8, gouvernance: 7, securite: 8, acceptabilite: 7, perennite: 7 },
-    tags: ["EPI", "Recommandation", "Danger"],
-    fonction: "Choix d'EPI",
-    categorieELON: "Équipement"
-  },
-  {
-    id: "prediction-accident-zone",
-    name: "Prédiction d'accident par zone à risque en temps réel",
-    description: "Modèle de machine learning pour prédire les accidents potentiels selon les zones de travail en temps réel",
-    icon: getCategoryIcon("Lieux"),
-    criteria: { impact: 9, excellence: 8, faisabilite: 6, gouvernance: 7, securite: 8, acceptabilite: 6, perennite: 7 },
-    tags: ["Machine Learning", "Prédictif", "Zones"],
-    fonction: "Identification des risques",
-    categorieELON: "Lieux"
-  },
-  {
-    id: "nlp-rapports-inspection",
-    name: "NLP pour analyser les rapports d'inspection internes",
-    description: "Traitement du langage naturel pour extraire des insights des rapports d'inspection et identifier les tendances",
-    icon: getCategoryIcon("Opérations"),
-    criteria: { impact: 7, excellence: 8, faisabilite: 7, gouvernance: 8, securite: 6, acceptabilite: 8, perennite: 8 },
-    tags: ["NLP", "Inspection", "Analyse"],
-    fonction: "Analyse d'inspections",
-    categorieELON: "Opérations"
-  },
-  {
-    id: "ia-non-conformites-audits",
-    name: "IA pour détecter les non-conformités dans les audits",
-    description: "Système de détection automatique des non-conformités lors des audits de sécurité",
-    icon: getCategoryIcon("Opérations"),
-    criteria: { impact: 8, excellence: 7, faisabilite: 7, gouvernance: 8, securite: 7, acceptabilite: 7, perennite: 8 },
-    tags: ["Audit", "Non-conformité", "Détection"],
-    fonction: "Suivi des inspections",
-    categorieELON: "Opérations"
-  },
-  {
-    id: "assistant-vocal-plaintes",
-    name: "Assistant vocal pour recueillir les plaintes SST",
-    description: "Interface vocale intelligente pour faciliter la remontée de plaintes et suggestions en matière de SST",
-    icon: getCategoryIcon("Nature humaine"),
-    criteria: { impact: 7, excellence: 6, faisabilite: 8, gouvernance: 7, securite: 6, acceptabilite: 8, perennite: 7 },
-    tags: ["Vocal", "Plaintes", "Interface"],
-    fonction: "Réception des suggestions/plaintes",
-    categorieELON: "Nature humaine"
-  },
-  {
-    id: "tableaux-bord-suivi",
-    name: "Tableaux de bord IA pour suivi des recommandations comité",
-    description: "Tableaux de bord intelligents pour suivre l'avancement des recommandations du comité SST",
-    icon: getCategoryIcon("Opérations"),
-    criteria: { impact: 7, excellence: 6, faisabilite: 8, gouvernance: 8, securite: 6, acceptabilite: 8, perennite: 8 },
-    tags: ["Dashboard", "Suivi", "Recommandations"],
-    fonction: "Suivi des recommandations",
-    categorieELON: "Opérations"
-  },
-  {
-    id: "generateur-ordres-jour",
-    name: "IA pour générer automatiquement les ordres du jour des réunions SST",
-    description: "Générateur automatique d'ordres du jour basé sur les priorités et incidents récents",
-    icon: getCategoryIcon("Opérations"),
-    criteria: { impact: 6, excellence: 7, faisabilite: 8, gouvernance: 7, securite: 5, acceptabilite: 8, perennite: 7 },
-    tags: ["Réunions", "Automation", "Planification"],
-    fonction: "Gestion des réunions",
-    categorieELON: "Opérations"
-  },
-  {
-    id: "analyse-tendances-incidents",
-    name: "Analyse automatique de tendances d'incidents",
-    description: "Système d'analyse automatique pour identifier les tendances et patterns dans les incidents SST",
-    icon: getCategoryIcon("Opérations"),
-    criteria: { impact: 8, excellence: 8, faisabilite: 7, gouvernance: 7, securite: 7, acceptabilite: 7, perennite: 8 },
-    tags: ["Tendances", "Incidents", "Analytics"],
-    fonction: "Analyse d'incidents",
-    categorieELON: "Opérations"
-  },
-  {
-    id: "alerte-seuil-equipement",
-    name: "IA d'alerte en cas de dépassement de seuil sur équipement mobile",
-    description: "Système d'alerte intelligent pour détecter les dépassements de seuils critiques sur équipements mobiles",
-    icon: getCategoryIcon("Équipement"),
-    criteria: { impact: 8, excellence: 7, faisabilite: 7, gouvernance: 6, securite: 9, acceptabilite: 7, perennite: 7 },
-    tags: ["Alerte", "Seuils", "Mobile"],
-    fonction: "Surveillance équipement",
-    categorieELON: "Équipement"
-  },
-  {
-    id: "evaluation-programme-prevention",
-    name: "IA pour évaluer le respect du programme de prévention sur chantier",
-    description: "Évaluation automatique du respect des programmes de prévention en temps réel sur les chantiers",
-    icon: getCategoryIcon("Lieux"),
-    criteria: { impact: 8, excellence: 7, faisabilite: 6, gouvernance: 8, securite: 7, acceptabilite: 6, perennite: 7 },
-    tags: ["Prévention", "Chantier", "Conformité"],
-    fonction: "Surveillance de l'application du programme",
-    categorieELON: "Lieux"
-  },
-  {
-    id: "ia-comportementale-gestes",
-    name: "IA comportementale pour évaluer les gestes dangereux en atelier",
-    description: "Analyse comportementale en temps réel pour détecter et prévenir les gestes dangereux",
-    icon: getCategoryIcon("Nature humaine"),
-    criteria: { impact: 8, excellence: 8, faisabilite: 6, gouvernance: 7, securite: 8, acceptabilite: 6, perennite: 7 },
-    tags: ["Comportemental", "Gestes", "Prévention"],
-    fonction: "Identification des comportements à risque",
-    categorieELON: "Nature humaine"
-  },
-  {
-    id: "generateur-proces-verbaux",
-    name: "Générateur de procès-verbaux intelligent pour le comité",
-    description: "Génération automatique de procès-verbaux structurés pour les réunions du comité SST",
-    icon: getCategoryIcon("Opérations"),
-    criteria: { impact: 6, excellence: 7, faisabilite: 8, gouvernance: 8, securite: 5, acceptabilite: 8, perennite: 8 },
-    tags: ["PV", "Automation", "Réunions"],
-    fonction: "Gestion automatisée des réunions",
-    categorieELON: "Opérations"
-  },
-  {
-    id: "assistant-plaintes-sentiment",
-    name: "Assistant IA de gestion des plaintes avec sentiment analysis",
-    description: "Système de gestion intelligent des plaintes avec analyse de sentiment pour prioriser les interventions",
-    icon: getCategoryIcon("Nature humaine"),
-    criteria: { impact: 7, excellence: 7, faisabilite: 7, gouvernance: 7, securite: 6, acceptabilite: 8, perennite: 7 },
-    tags: ["Sentiment", "Plaintes", "Priorisation"],
-    fonction: "Réception et traitement des suggestions",
-    categorieELON: "Nature humaine"
-  },
-  {
-    id: "analyse-climat-thermique",
-    name: "IA pour l'analyse du climat thermique dans les zones de travail",
-    description: "Monitoring et analyse intelligente des conditions thermiques pour prévenir les risques liés à la chaleur",
-    icon: getCategoryIcon("Lieux"),
-    criteria: { impact: 7, excellence: 7, faisabilite: 7, gouvernance: 6, securite: 8, acceptabilite: 7, perennite: 7 },
-    tags: ["Thermique", "Monitoring", "Environnement"],
-    fonction: "Identification de risques émergents",
-    categorieELON: "Lieux"
-  },
-  {
-    id: "rapports-cnesst-auto",
-    name: "Générateur de rapports CNESST automatisés",
-    description: "Génération automatique de rapports conformes aux exigences de la CNESST",
-    icon: getCategoryIcon("Opérations"),
-    criteria: { impact: 7, excellence: 6, faisabilite: 8, gouvernance: 9, securite: 6, acceptabilite: 8, perennite: 8 },
-    tags: ["CNESST", "Rapports", "Conformité"],
-    fonction: "Rapport annuel / conformité légale",
-    categorieELON: "Opérations"
-  },
-  {
-    id: "simulation-evacuation",
-    name: "IA pour simuler des scénarios d'évacuation en cas d'urgence",
-    description: "Simulation intelligente de scénarios d'évacuation pour optimiser les plans d'urgence",
-    icon: getCategoryIcon("Lieux"),
-    criteria: { impact: 8, excellence: 8, faisabilite: 6, gouvernance: 7, securite: 9, acceptabilite: 7, perennite: 7 },
-    tags: ["Évacuation", "Simulation", "Urgence"],
-    fonction: "Gestion des interventions d'urgence",
-    categorieELON: "Lieux"
-  },
+  // Santé au travail (81-90)
   {
     id: "analyse-maladies-pro",
     name: "Outil IA pour analyser les maladies professionnelles par secteur",
     description: "Analyse prédictive des maladies professionnelles selon les secteurs d'activité",
-    icon: getCategoryIcon("Nature humaine"),
+    icon: <Users className="h-5 w-5" />,
     criteria: { impact: 8, excellence: 8, faisabilite: 7, gouvernance: 8, securite: 7, acceptabilite: 7, perennite: 8 },
     tags: ["Maladies pro", "Secteur", "Prédictif"],
     fonction: "Analyse des maladies professionnelles",
     categorieELON: "Nature humaine"
   },
+
+  // Surveillance et monitoring (91-100)
   {
-    id: "scan-equipements-securite",
-    name: "IA mobile de scan des équipements de sécurité",
-    description: "Application mobile pour scanner et vérifier l'état des équipements de sécurité (extincteurs, trousses)",
-    icon: getCategoryIcon("Équipement"),
-    criteria: { impact: 7, excellence: 6, faisabilite: 8, gouvernance: 6, securite: 7, acceptabilite: 8, perennite: 7 },
-    tags: ["Mobile", "Scan", "Équipements"],
-    fonction: "Vérification de conformité",
-    categorieELON: "Équipement"
+    id: "geolocalisation-securite",
+    name: "Système IA de géolocalisation des engins et travailleurs",
+    description: "Solution de tracking intelligent pour la sécurité des équipements et du personnel",
+    icon: <MapPin className="h-5 w-5" />,
+    criteria: { impact: 7, excellence: 7, faisabilite: 8, gouvernance: 6, securite: 8, acceptabilite: 6, perennite: 8 },
+    tags: ["Géolocalisation", "Tracking", "Sécurité"],
+    fonction: "Surveillance du personnel",
+    categorieELON: "Lieux"
   },
   {
-    id: "suivi-formations-sst",
-    name: "IA pour suivi des formations obligatoires SST",
-    description: "Système de suivi automatisé des formations obligatoires en santé-sécurité",
-    icon: getCategoryIcon("Opérations"),
-    criteria: { impact: 7, excellence: 6, faisabilite: 8, gouvernance: 8, securite: 6, acceptabilite: 8, perennite: 8 },
-    tags: ["Formation", "Suivi", "Conformité"],
-    fonction: "Suivi des obligations légales",
-    categorieELON: "Opérations"
+    id: "detection-bruit-excessif",
+    name: "IA de détection de bruit excessif (analyse spectrale)",
+    description: "Système d'analyse acoustique intelligent pour détecter les niveaux sonores dangereux",
+    icon: <Zap className="h-5 w-5" />,
+    criteria: { impact: 7, excellence: 7, faisabilite: 7, gouvernance: 6, securite: 8, acceptabilite: 7, perennite: 7 },
+    tags: ["Acoustique", "Bruit", "Surveillance"],
+    fonction: "Surveillance environnementale",
+    categorieELON: "Équipement"
   }
-  // ... Continuer avec les 80 autres modèles selon la même structure
 ];
 
 const ProjectTemplates = ({ onSelectTemplate }: ProjectTemplatesProps) => {
@@ -277,7 +371,7 @@ const ProjectTemplates = ({ onSelectTemplate }: ProjectTemplatesProps) => {
   return (
     <div className="mb-6">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">🚀 Modèles de projets IA-SST</h3>
+        <h3 className="text-lg font-semibold">🚀 Modèles de projets IA-SST spécialisés Comité SST</h3>
         <Badge variant="outline" className="text-xs">
           {filteredTemplates.length} modèles disponibles
         </Badge>
@@ -310,7 +404,7 @@ const ProjectTemplates = ({ onSelectTemplate }: ProjectTemplatesProps) => {
 
         <Select value={functionFilter} onValueChange={setFunctionFilter}>
           <SelectTrigger>
-            <SelectValue placeholder="Fonction du comité" />
+            <SelectValue placeholder="Fonction du comité SST" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Toutes les fonctions</SelectItem>
