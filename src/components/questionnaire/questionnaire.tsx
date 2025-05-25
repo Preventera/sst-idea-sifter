@@ -1,15 +1,18 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { AlertCircle, CheckCircle, FileText, Brain, Database, Settings, Shield, Users, Zap, TrendingUp, Telescope } from "lucide-react";
+import { AlertCircle, CheckCircle, FileText, Brain, Database, Settings, Shield, Users, Zap, TrendingUp, Telescope, Save } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
 import ResponseAnalysis from "./response-analysis";
+import QuestionnaireProgress from "./questionnaire-progress";
+import RealtimeRecommendations from "./real-time-recommendations";
+import SectionValidation from "./section-validation";
 
 interface QuestionOption {
   id: string;
@@ -301,9 +304,30 @@ const QUESTIONNAIRE_SECTIONS: QuestionnaireSection[] = [
 ];
 
 const Questionnaire = ({ onClose, onGenerateProject }: QuestionnaireProps) => {
+  const { toast } = useToast();
   const [currentSection, setCurrentSection] = useState(0);
   const [responses, setResponses] = useState<Record<number, { option: string; custom?: string }>>({});
   const [isCompleted, setIsCompleted] = useState(false);
+
+  // Sauvegarde automatique
+  useEffect(() => {
+    const saved = localStorage.getItem('ignitia-questionnaire-responses');
+    if (saved) {
+      try {
+        setResponses(JSON.parse(saved));
+        toast({
+          title: "Données restaurées",
+          description: "Vos réponses précédentes ont été restaurées.",
+        });
+      } catch (error) {
+        console.error('Erreur lors de la restauration:', error);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('ignitia-questionnaire-responses', JSON.stringify(responses));
+  }, [responses]);
 
   const updateResponse = (questionId: number, option: string, custom?: string) => {
     setResponses(prev => ({ 
@@ -329,6 +353,11 @@ const Questionnaire = ({ onClose, onGenerateProject }: QuestionnaireProps) => {
       setCurrentSection(currentSection + 1);
     } else {
       setIsCompleted(true);
+      localStorage.removeItem('ignitia-questionnaire-responses');
+      toast({
+        title: "Questionnaire terminé !",
+        description: "Vos réponses ont été analysées et les recommandations sont prêtes.",
+      });
     }
   };
 
@@ -336,6 +365,14 @@ const Questionnaire = ({ onClose, onGenerateProject }: QuestionnaireProps) => {
     if (currentSection > 0) {
       setCurrentSection(currentSection - 1);
     }
+  };
+
+  const saveProgress = () => {
+    const answeredCount = Object.values(responses).filter(r => r.option).length;
+    toast({
+      title: "Progression sauvegardée",
+      description: `${answeredCount} réponses sauvegardées localement.`,
+    });
   };
 
   const exportResults = () => {
@@ -405,48 +442,38 @@ const Questionnaire = ({ onClose, onGenerateProject }: QuestionnaireProps) => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-6xl mx-auto">
-        {/* En-tête */}
+        {/* En-tête amélioré */}
         <div className="mb-6">
           <div className="flex justify-between items-center mb-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                📋 Questionnaire structuré IGNITIA
+                🚀 Questionnaire structuré IGNITIA
               </h1>
               <p className="text-gray-600">
-                Identification des besoins IA pour un projet agentique en Santé-Sécurité au Travail (SST)
+                Outil de cadrage complet pour projets agentiques en Santé-Sécurité au Travail
               </p>
             </div>
-            <Button variant="outline" onClick={onClose}>
-              Fermer
-            </Button>
-          </div>
-
-          {/* Progrès global */}
-          <div className="mb-4">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium">Progrès global</span>
-              <span className="text-sm text-gray-500">
-                {Object.values(responses).filter(r => r.option).length} / {QUESTIONNAIRE_SECTIONS.reduce((sum, section) => sum + section.questions.length, 0)}
-              </span>
-            </div>
-            <Progress value={getOverallProgress()} className="h-2" />
-          </div>
-
-          {/* Navigation des sections */}
-          <div className="flex flex-wrap gap-2">
-            {QUESTIONNAIRE_SECTIONS.map((sect, index) => (
-              <Button
-                key={sect.id}
-                variant={index === currentSection ? "default" : "outline"}
-                size="sm"
-                onClick={() => setCurrentSection(index)}
-                className="text-xs"
-              >
-                {sect.icon}
-                <span className="ml-1 hidden sm:inline">{sect.title}</span>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={saveProgress}>
+                <Save className="h-4 w-4 mr-2" />
+                Sauvegarder
               </Button>
-            ))}
+              <Button variant="outline" onClick={onClose}>
+                Fermer
+              </Button>
+            </div>
           </div>
+
+          {/* Progression améliorée */}
+          <QuestionnaireProgress 
+            sections={QUESTIONNAIRE_SECTIONS}
+            currentSection={currentSection}
+            responses={responses}
+            onSectionClick={setCurrentSection}
+          />
+
+          {/* Recommandations temps réel */}
+          <RealtimeRecommendations responses={responses} />
         </div>
 
         {/* Section courante */}
@@ -464,16 +491,8 @@ const Questionnaire = ({ onClose, onGenerateProject }: QuestionnaireProps) => {
               </div>
             </div>
             
-            {/* Progrès de la section */}
-            <div className="mt-4">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium">Progrès de cette section</span>
-                <Badge variant="outline">
-                  {section.questions.filter(q => responses[q.id]?.option).length} / {section.questions.length}
-                </Badge>
-              </div>
-              <Progress value={getCurrentSectionProgress()} className="h-2" />
-            </div>
+            {/* Validation de section */}
+            <SectionValidation section={section} responses={responses} />
           </CardHeader>
 
           <CardContent>
@@ -499,16 +518,16 @@ const Questionnaire = ({ onClose, onGenerateProject }: QuestionnaireProps) => {
                       </div>
                     ))}
                     
-                    {/* Option "Autre" */}
+                    {/* Option "Autre" améliorée */}
                     <div className="flex items-start space-x-3 p-3 rounded-lg border-2 border-dashed border-gray-200">
                       <RadioGroupItem value="autre" id={`${question.id}-autre`} />
                       <div className="flex-1">
                         <Label htmlFor={`${question.id}-autre`} className="flex items-center gap-2 cursor-pointer mb-2">
                           <span className="text-lg">✏</span>
-                          <span className="font-medium">Autre :</span>
+                          <span className="font-medium">Autre (précisez) :</span>
                         </Label>
                         <Input
-                          placeholder="Précisez votre réponse..."
+                          placeholder="Décrivez votre besoin spécifique..."
                           value={responses[question.id]?.custom || ""}
                           onChange={(e) => updateResponse(question.id, responses[question.id]?.option || "autre", e.target.value)}
                           onClick={() => updateResponse(question.id, "autre", responses[question.id]?.custom || "")}
@@ -521,17 +540,22 @@ const Questionnaire = ({ onClose, onGenerateProject }: QuestionnaireProps) => {
               ))}
             </div>
 
-            {/* Navigation */}
-            <div className="flex justify-between mt-8">
+            {/* Navigation améliorée */}
+            <div className="flex justify-between items-center mt-8">
               <Button
                 variant="outline"
                 onClick={prevSection}
                 disabled={currentSection === 0}
               >
-                Section précédente
+                ← Section précédente
               </Button>
+              
+              <Badge variant="outline" className="text-sm">
+                Section {currentSection + 1} sur {QUESTIONNAIRE_SECTIONS.length}
+              </Badge>
+              
               <Button onClick={nextSection}>
-                {currentSection === QUESTIONNAIRE_SECTIONS.length - 1 ? "Terminer" : "Section suivante"}
+                {currentSection === QUESTIONNAIRE_SECTIONS.length - 1 ? "🎯 Terminer & Analyser" : "Section suivante →"}
               </Button>
             </div>
           </CardContent>
