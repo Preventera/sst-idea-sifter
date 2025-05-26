@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Project } from "../../types/project";
 
 import { ProjectFormProps, useProjectForm } from "./use-project-form";
-import ProjectNameInput from "./project-name-input";
+import AIEnhancedNameInput from "./ai-enhanced-name-input";
 import ScianSectorSelect from "./scian-sector-select";
 import PriorityInfo from "./priority-info";
 import StandardCriteria from "./standard-criteria";
@@ -87,7 +87,12 @@ const ProjectForm = ({ onAddProject, editingProject, onUpdateProject, onCancelEd
           <CardTitle>{editingProject ? "Modifier le projet" : "Nouveau projet IA-SST"}</CardTitle>
         </CardHeader>
         <CardContent>
-          <ProjectNameInput name={name} setName={setName} />
+          <AIEnhancedNameInput 
+            name={name} 
+            setName={setName}
+            criteria={criteria}
+            scianSectorId={scianSectorId}
+          />
           
           <ScianSectorSelect 
             selectedSectorId={scianSectorId} 
