@@ -17,7 +17,11 @@ const AIEnhancedNameInput = ({ name, setName, criteria, scianSectorId }: AIEnhan
   const [selectedLLM, setSelectedLLM] = useState<LLMProvider>('openai');
   const { generateContent, analyzeContent, isLoading } = useAIAssistant();
 
+  console.log('AIEnhancedNameInput rendered'); // Debug log
+
   const generateProjectIdeas = async () => {
+    console.log('Génération d\'idées de projet démarrée'); // Debug log
+    
     const criteriaText = Object.entries(criteria)
       .map(([key, value]) => `${key}: ${value}/10`)
       .join(', ');
@@ -35,35 +39,32 @@ const AIEnhancedNameInput = ({ name, setName, criteria, scianSectorId }: AIEnhan
     
     let result = null;
     
-    if (selectedLLM === 'openai') {
-      result = await generateContent({
-        type: 'project_description',
-        prompt,
-        context
-      });
-    } else {
-      result = await analyzeContent({
-        analysisType: 'questionnaire_analysis',
-        text: `Génère une description de projet basée sur: ${prompt}`,
-        context
-      });
-    }
-    
-    if (result) {
-      setName(result);
+    try {
+      if (selectedLLM === 'openai') {
+        result = await generateContent({
+          type: 'project_description',
+          prompt,
+          context
+        });
+      } else {
+        result = await analyzeContent({
+          analysisType: 'questionnaire_analysis',
+          text: `Génère une description de projet basée sur: ${prompt}`,
+          context
+        });
+      }
+      
+      if (result) {
+        setName(result);
+        console.log('Résultat généré:', result); // Debug log
+      }
+    } catch (error) {
+      console.error('Erreur lors de la génération:', error);
     }
   };
 
   return (
     <div className="mb-6 space-y-4">
-      {/* Sélecteur LLM visible en haut */}
-      <LLMSelector
-        selectedLLM={selectedLLM}
-        onLLMChange={setSelectedLLM}
-        onGenerate={generateProjectIdeas}
-        isLoading={isLoading}
-      />
-
       <div>
         <label htmlFor="project-name" className="block text-sm font-medium text-gray-700 mb-1">
           Nom / Description du projet
@@ -76,15 +77,29 @@ const AIEnhancedNameInput = ({ name, setName, criteria, scianSectorId }: AIEnhan
           className="w-full"
         />
       </div>
+
+      {/* Sélecteur LLM toujours visible */}
+      <div className="border-t pt-4">
+        <h4 className="text-sm font-medium text-gray-700 mb-2">🤖 Assistant IA pour générer des idées</h4>
+        <LLMSelector
+          selectedLLM={selectedLLM}
+          onLLMChange={setSelectedLLM}
+          onGenerate={generateProjectIdeas}
+          isLoading={isLoading}
+        />
+      </div>
       
       {/* Afficher l'amélioration de texte seulement si il y a du texte */}
       {name.trim() && (
-        <AITextEnhancer
-          originalText={name}
-          onApply={setName}
-          context={`Secteur: ${scianSectorId || 'Non spécifié'}`}
-          placeholder="Description du projet IA-SST"
-        />
+        <div className="border-t pt-4">
+          <h4 className="text-sm font-medium text-gray-700 mb-2">✨ Améliorer le texte</h4>
+          <AITextEnhancer
+            originalText={name}
+            onApply={setName}
+            context={`Secteur: ${scianSectorId || 'Non spécifié'}`}
+            placeholder="Description du projet IA-SST"
+          />
+        </div>
       )}
     </div>
   );
