@@ -1,217 +1,331 @@
 
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Slider } from "@/components/ui/slider"
-import { Switch } from "@/components/ui/switch"
-import { Plus, Edit, Trash2, AlertCircle, User } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { useLocalStorage } from '@/hooks/use-local-storage';
-import { Link } from 'react-router-dom';
-import ProjectForm from '@/components/project-form/project-form';
-import Questionnaire from '@/components/questionnaire';
-import { Project } from '@/types/project';
+import React, { useState, useMemo } from "react";
+import { useLocalStorage } from "@/hooks/use-local-storage";
+import { Project } from "@/types/project";
+import ProjectForm from "@/components/project-form";
+import ProjectList from "@/components/project-list";
+import ExportButton from "@/components/export-button";
+import EnhancedExportButton from "@/components/enhanced-export-button";
+import ProjectTemplates, { ProjectTemplate } from "@/components/project-templates";
+import ProjectFilters from "@/components/project-filters";
+import Questionnaire from "@/components/questionnaire";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { X, TrendingUp, Users, BarChart3, FileQuestion } from "lucide-react";
+import { calculateDetailedPriority, SCIAN_SECTORS } from "@/data/scian-sectors";
 
 const Index = () => {
-  const [projects, setProjects] = useLocalStorage<Project[]>("projects", []);
+  const [projects, setProjects] = useLocalStorage<Project[]>("ia-sst-projects", []);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [showTemplates, setShowTemplates] = useState(false);
   const [showQuestionnaire, setShowQuestionnaire] = useState(false);
-  const [sortBy, setSortBy] = useState<"score" | "name">("score");
-  const [filterSector, setFilterSector] = useState<string>("all");
+  
+  // États pour les filtres
+  const [searchTerm, setSearchTerm] = useState("");
+  const [priorityFilter, setPriorityFilter] = useState("all");
+  const [sectorFilter, setSectorFilter] = useState("all");
+  const [scoreFilter, setScoreFilter] = useState("all");
+
+  // Logique de filtrage - TOUS LES HOOKS DOIVENT ÊTRE APPELÉS AVANT TOUT RETURN CONDITIONNEL
+  const filteredProjects = useMemo(() => {
+    return projects.filter(project => {
+      // Filtrage par terme de recherche
+      if (searchTerm && !project.name.toLowerCase().includes(searchTerm.toLowerCase())) {
+        return false;
+      }
+
+      // Filtrage par priorité
+      if (priorityFilter !== "all") {
+        if (priorityFilter === "undefined" && project.priority) return false;
+        if (priorityFilter !== "undefined" && (!project.priority || project.priority.level !== priorityFilter)) return false;
+      }
+
+      // Filtrage par secteur
+      if (sectorFilter !== "all") {
+        if (sectorFilter === "undefined" && project.scianSectorId) return false;
+        if (sectorFilter !== "undefined" && project.scianSectorId !== sectorFilter) return false;
+      }
+
+      // Filtrage par score
+      if (scoreFilter !== "all") {
+        switch (scoreFilter) {
+          case "8+":
+            return project.score >= 8;
+          case "6+":
+            return project.score >= 6;
+          case "4+":
+            return project.score >= 4;
+          case "<4":
+            return project.score < 4;
+        }
+      }
+
+      return true;
+    });
+  }, [projects, searchTerm, priorityFilter, sectorFilter, scoreFilter]);
+
+  // Fix here: Ensure hasActiveFilters is boolean by using Boolean() or !! conversion
+  const hasActiveFilters = Boolean(searchTerm || priorityFilter !== "all" || sectorFilter !== "all" || scoreFilter !== "all");
+
+  // Statistiques pour le tableau de bord
+  const stats = useMemo(() => {
+    const totalProjects = projects.length;
+    const projectsWithPriority = projects.filter(p => p.priority).length;
+    const avgScore = totalProjects > 0 ? projects.reduce((sum, p) => sum + p.score, 0) / totalProjects : 0;
+    
+    return {
+      total: totalProjects,
+      withPriority: projectsWithPriority,
+      avgScore: Math.round(avgScore * 100) / 100 // Arrondir à 2 décimales
+    };
+  }, [projects]);
+
+  // Si le questionnaire est ouvert, l'afficher en plein écran - MAINTENANT APRÈS TOUS LES HOOKS
+  if (showQuestionnaire) {
+    return (
+      <Questionnaire 
+        onClose={() => setShowQuestionnaire(false)} 
+        onCreateProject={handleAddProject}
+      />
+    );
+  }
 
   const handleAddProject = (project: Project) => {
     setProjects([...projects, project]);
   };
 
   const handleUpdateProject = (updatedProject: Project) => {
-    setProjects(projects.map(project =>
-      project.id === updatedProject.id ? updatedProject : project
-    ));
+    setProjects(
+      projects.map((project) =>
+        project.id === updatedProject.id ? updatedProject : project
+      )
+    );
     setEditingProject(null);
+  };
+
+  const handleEditProject = (project: Project) => {
+    setEditingProject(project);
+    // Faire défiler vers le haut pour voir le formulaire
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleDeleteProject = (id: string) => {
-    setProjects(projects.filter(project => project.id !== id));
+    setProjects(projects.filter((project) => project.id !== id));
   };
 
-  const handleCancelEdit = () => {
-    setEditingProject(null);
+  const handleClearAllProjects = () => {
+    setProjects([]);
   };
 
-  const handleSortChange = (value: string) => {
-    setSortBy(value as "score" | "name");
+  const handleSelectTemplate = (template: ProjectTemplate) => {
+    const criteriaScore = Object.values(template.criteria).reduce((sum, value) => sum + value, 0) / Object.values(template.criteria).length;
+    const project: Project = {
+      id: Date.now().toString(),
+      name: template.name,
+      criteria: template.criteria,
+      score: Math.round(criteriaScore * 100) / 100, // Arrondir à 2 décimales
+      scianSectorId: template.scianSectorId,
+      priority: template.scianSectorId ? calculateDetailedPriority(SCIAN_SECTORS.find(s => s.id === template.scianSectorId)!) : undefined
+    };
+    
+    setProjects([...projects, project]);
+    setShowTemplates(false);
   };
 
-  const sortedProjects = [...projects].sort((a, b) => {
-    if (sortBy === "score") {
-      return b.score - a.score;
-    } else {
-      return a.name.localeCompare(b.name);
-    }
-  });
-
-  const filteredProjects = filterSector === "all"
-    ? sortedProjects
-    : sortedProjects.filter(project => project.scianSectorId === filterSector);
+  const clearFilters = () => {
+    setSearchTerm("");
+    setPriorityFilter("all");
+    setSectorFilter("all");
+    setScoreFilter("all");
+  };
 
   return (
-    <div className="container mx-auto py-10">
-      <div className="mb-8 flex justify-between items-center">
-        <h1 className="text-3xl font-bold">
-          Projets IA-SST
-        </h1>
-        <div className="flex gap-4">
-          <Link to="/profile-scian">
-            <Button variant="outline">
-              <User className="h-4 w-4 mr-2" />
-              Profil SCIAN HSE
-            </Button>
-          </Link>
-          <Button onClick={() => setShowQuestionnaire(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nouveau projet (Questionnaire)
-          </Button>
-        </div>
-      </div>
-
-      {showQuestionnaire && (
-        <div className="fixed inset-0 bg-white z-50 overflow-auto">
-          <div className="container mx-auto py-6">
-            <Questionnaire
-              onClose={() => setShowQuestionnaire(false)}
-              onCreateProject={handleAddProject}
-            />
-          </div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Colonne principale - Liste des projets */}
-        <div className="lg:col-span-2">
-          {/* Formulaire d'ajout de projet */}
-          <ProjectForm
-            onAddProject={handleAddProject}
-            editingProject={editingProject}
-            onUpdateProject={handleUpdateProject}
-            onCancelEdit={handleCancelEdit}
-          />
-
-          {/* Filtres et tris */}
-          <div className="flex items-center justify-between mb-4">
-            <Select onValueChange={handleSortChange}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Trier par..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="score">Score</SelectItem>
-                <SelectItem value="name">Nom</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select onValueChange={setFilterSector}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filtrer par secteur..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les secteurs</SelectItem>
-                <SelectItem value="21">Extraction minière, exploitation en carrière et extraction de pétrole et de gaz</SelectItem>
-                <SelectItem value="22">Services publics</SelectItem>
-                <SelectItem value="23">Construction</SelectItem>
-                <SelectItem value="31-33">Fabrication</SelectItem>
-                <SelectItem value="41">Commerce de gros</SelectItem>
-                <SelectItem value="44-45">Commerce de détail</SelectItem>
-                <SelectItem value="48-49">Transport et entreposage</SelectItem>
-                <SelectItem value="51">Industrie de l'information et industrie culturelle</SelectItem>
-                <SelectItem value="52">Finance et assurances</SelectItem>
-                <SelectItem value="53">Services immobiliers et services de location et de location à bail</SelectItem>
-                <SelectItem value="54">Services professionnels, scientifiques et techniques</SelectItem>
-                <SelectItem value="56">Services administratifs, services de soutien, services de gestion des déchets et services d'assainissement</SelectItem>
-                <SelectItem value="61">Services d'enseignement</SelectItem>
-                <SelectItem value="62">Soins de santé et assistance sociale</SelectItem>
-                <SelectItem value="71">Arts, spectacles et loisirs</SelectItem>
-                <SelectItem value="72">Hébergement et services de restauration</SelectItem>
-                <SelectItem value="81">Autres services (sauf les administrations publiques)</SelectItem>
-                <SelectItem value="91">Administrations publiques</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Liste des projets */}
-          <div className="space-y-4">
-            {filteredProjects.length > 0 ? (
-              filteredProjects.map(project => (
-                <Card key={project.id}>
-                  <CardHeader>
-                    <div className="flex justify-between items-center">
-                      <CardTitle>{project.name}</CardTitle>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="secondary"
-                          size="icon"
-                          onClick={() => setEditingProject(project)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          onClick={() => handleDeleteProject(project.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-gray-500">
-                      Score: {project.score}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
-              <Card>
-                <CardContent className="text-center">
-                  <AlertCircle className="h-6 w-6 mx-auto mb-2 text-gray-400" />
-                  Aucun projet trouvé.
-                </CardContent>
-              </Card>
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white shadow-sm border-b">
+        <div className="container py-6">
+          <div className="flex justify-between items-start">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-lg">I</span>
+                </div>
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                    IGNITIA
+                  </h1>
+                  <p className="text-sm text-blue-600 font-medium">
+                    GenAISafety - Priorisation de Projets IA en SST
+                  </p>
+                </div>
+              </div>
+              <p className="text-gray-600 max-w-2xl">
+                Évaluez vos idées d'intelligence artificielle selon les critères de santé-sécurité au travail pour déterminer celles à prioriser.
+              </p>
+            </div>
+            
+            {projects.length > 0 && (
+              <div className="hidden md:flex gap-4 text-center">
+                <div className="bg-blue-50 p-3 rounded-lg">
+                  <div className="flex items-center gap-2 text-blue-600 mb-1">
+                    <BarChart3 className="h-4 w-4" />
+                    <span className="text-xs font-medium">PROJETS</span>
+                  </div>
+                  <div className="text-xl font-bold text-blue-700">{stats.total}</div>
+                </div>
+                <div className="bg-green-50 p-3 rounded-lg">
+                  <div className="flex items-center gap-2 text-green-600 mb-1">
+                    <TrendingUp className="h-4 w-4" />
+                    <span className="text-xs font-medium">AVEC PRIORITÉ</span>
+                  </div>
+                  <div className="text-xl font-bold text-green-700">{stats.withPriority}</div>
+                </div>
+                <div className="bg-purple-50 p-3 rounded-lg">
+                  <div className="flex items-center gap-2 text-purple-600 mb-1">
+                    <Users className="h-4 w-4" />
+                    <span className="text-xs font-medium">SCORE MOYEN</span>
+                  </div>
+                  <div className="text-xl font-bold text-purple-700">{stats.avgScore}/10</div>
+                </div>
+              </div>
             )}
           </div>
         </div>
+      </header>
 
-        {/* Colonne latérale - Instructions */}
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Instructions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <p className="text-sm text-gray-500">
-                Bienvenue dans l'outil de gestion de projets IA-SST!
-              </p>
-              <ul className="list-disc pl-4 text-sm text-gray-500">
-                <li>
-                  Utilisez le bouton "Nouveau projet" pour ajouter un projet.
-                </li>
-                <li>
-                  Accédez au "Profil SCIAN HSE" pour configurer les informations de votre entreprise.
-                </li>
-                <li>
-                  Remplissez le formulaire avec les informations du projet.
-                </li>
-                <li>
-                  Ajustez les critères d'évaluation pour refléter les
-                  priorités de votre organisation.
-                </li>
-              </ul>
-            </CardContent>
-          </Card>
+      <main className="container py-8">
+        <div className="grid gap-8">
+          <div>
+            {!showTemplates && (
+              <div className="mb-4 flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowQuestionnaire(true)}
+                  className="mr-2"
+                >
+                  <FileQuestion className="h-4 w-4 mr-2" />
+                  📋 Questionnaire de cadrage IGNITIA
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowTemplates(true)}
+                  className="mr-2"
+                >
+                  🚀 Utiliser un modèle
+                </Button>
+                <Badge variant="outline" className="text-xs">
+                  Nouveau ! Templates et questionnaire structuré IGNITIA
+                </Badge>
+              </div>
+            )}
+
+            {showTemplates && (
+              <div>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold">Modèles de projets</h2>
+                  <Button
+                    variant="ghost"
+                    onClick={() => setShowTemplates(false)}
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Fermer les modèles
+                  </Button>
+                </div>
+                <ProjectTemplates onSelectTemplate={handleSelectTemplate} />
+              </div>
+            )}
+
+            <ProjectForm
+              onAddProject={handleAddProject}
+              editingProject={editingProject}
+              onUpdateProject={handleUpdateProject}
+              onCancelEdit={() => setEditingProject(null)}
+            />
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-800">
+                Projets évalués ({filteredProjects.length})
+                {hasActiveFilters && (
+                  <Badge variant="outline" className="ml-2">
+                    Filtré sur {projects.length}
+                  </Badge>
+                )}
+              </h2>
+              <div className="flex gap-2">
+                <ExportButton projects={filteredProjects} />
+                <EnhancedExportButton projects={filteredProjects} />
+                
+                {projects.length > 0 && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="icon">
+                        <X className="h-4 w-4" />
+                        <span className="sr-only">Tout effacer</span>
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Effacer tous les projets</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Êtes-vous sûr de vouloir supprimer tous vos projets ? Cette action est irréversible.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleClearAllProjects}>
+                          Tout effacer
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </div>
+            </div>
+
+            {projects.length > 0 && (
+              <ProjectFilters
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                priorityFilter={priorityFilter}
+                setPriorityFilter={setPriorityFilter}
+                sectorFilter={sectorFilter}
+                setSectorFilter={setSectorFilter}
+                scoreFilter={scoreFilter}
+                setScoreFilter={setScoreFilter}
+                onClearFilters={clearFilters}
+                hasActiveFilters={hasActiveFilters}
+              />
+            )}
+
+            <ProjectList
+              projects={filteredProjects}
+              onEdit={handleEditProject}
+              onDelete={handleDeleteProject}
+            />
+          </div>
         </div>
-      </div>
+      </main>
+
+      <footer className="bg-white border-t py-6">
+        <div className="container">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="flex items-center gap-3 mb-4 md:mb-0">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold">I</span>
+              </div>
+              <div>
+                <p className="text-gray-700 font-medium text-sm">IGNITIA</p>
+                <p className="text-gray-500 text-xs">GenAISafety - Priorisation IA-SST</p>
+              </div>
+            </div>
+            <p className="text-center text-gray-500 text-sm">
+              © {new Date().getFullYear()} IGNITIA de GenAISafety - Générateur interactif de priorisation de projets IA en SST
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

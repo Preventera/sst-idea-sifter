@@ -14,61 +14,49 @@ interface AIEnhancedNameInputProps {
 }
 
 const AIEnhancedNameInput = ({ name, setName, criteria, scianSectorId }: AIEnhancedNameInputProps) => {
-  const [selectedLLM, setSelectedLLM] = useState<LLMProvider>('claude'); // Changer le défaut à Claude
+  const [selectedLLM, setSelectedLLM] = useState<LLMProvider>('openai');
   const { generateContent, analyzeContent, isLoading } = useAIAssistant();
 
-  console.log('AIEnhancedNameInput rendered');
+  console.log('AIEnhancedNameInput rendered'); // Debug log
 
   const generateProjectIdeas = async () => {
-    console.log('Génération d\'idées de projet démarrée');
+    console.log('Génération d\'idées de projet démarrée'); // Debug log
     
     const criteriaText = Object.entries(criteria)
       .map(([key, value]) => `${key}: ${value}/10`)
       .join(', ');
 
     const context = scianSectorId ? `Secteur SCIAN: ${scianSectorId}` : '';
-    const prompt = `Génère une description courte et précise d'un projet IA-SST innovant basé sur ces critères: ${criteriaText}. La description doit être concrète, réalisable et spécifique au domaine SST. Maximum 100 mots.`;
+
+    const prompts = [
+      `Génère une description de projet IA-SST innovant basée sur ces critères: ${criteriaText}`,
+      `Propose un projet IA-SST axé sur la prévention avec ces scores: ${criteriaText}`,
+      `Suggère un projet IA-SST pour améliorer la sécurité au travail: ${criteriaText}`
+    ];
+
+    // Prendre le premier prompt pour une génération simple
+    const prompt = prompts[0];
     
     let result = null;
     
     try {
       if (selectedLLM === 'openai') {
-        console.log('Tentative avec OpenAI...');
         result = await generateContent({
           type: 'project_description',
           prompt,
           context
         });
-        
-        // Si OpenAI échoue, essayer Claude automatiquement
-        if (!result) {
-          console.log('OpenAI a échoué, basculement vers Claude...');
-          result = await analyzeContent({
-            analysisType: 'questionnaire_analysis',
-            text: `Génère une description de projet IA-SST basée sur: ${prompt}`,
-            context
-          });
-        }
       } else {
-        console.log('Tentative avec Claude...');
         result = await analyzeContent({
           analysisType: 'questionnaire_analysis',
-          text: `Génère une description de projet IA-SST basée sur: ${prompt}`,
+          text: `Génère une description de projet basée sur: ${prompt}`,
           context
         });
       }
       
       if (result) {
-        // Nettoyer le résultat pour enlever les préfixes inutiles
-        const cleanResult = result
-          .replace(/^(Voici une description|Description du projet|Projet IA-SST|Génération d'un projet)[\s:]*[:\-]*/i, '')
-          .replace(/^["']|["']$/g, '')
-          .trim();
-        
-        setName(cleanResult);
-        console.log('Résultat généré:', cleanResult);
-      } else {
-        console.error('Aucun résultat généré par les deux LLM');
+        setName(result);
+        console.log('Résultat généré:', result); // Debug log
       }
     } catch (error) {
       console.error('Erreur lors de la génération:', error);

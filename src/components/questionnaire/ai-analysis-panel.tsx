@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { Brain, FileText, TrendingUp, AlertTriangle, Plus, Copy } from 'lucide-react';
 import { useAIAssistant } from '@/hooks/use-ai-assistant';
 import { useToast } from '@/hooks/use-toast';
-import AnalysisVisualization from './analysis-visualization';
 
 interface AIAnalysisPanelProps {
   responses: Record<number, { option: string; custom?: string }>;
@@ -45,6 +44,38 @@ const AIAnalysisPanel = ({ responses, sections, onCreateProject }: AIAnalysisPan
     }
   };
 
+  const formatAnalysisText = (text: string) => {
+    // Diviser le texte en paragraphes et ajouter du formatage
+    return text
+      .split('\n')
+      .filter(line => line.trim())
+      .map((paragraph, index) => {
+        // Détecter les titres (lignes qui commencent par des majuscules ou des numéros)
+        if (paragraph.match(/^[A-Z\d][^.]*:/) || paragraph.match(/^\d+\./)) {
+          return (
+            <h4 key={index} className="font-semibold text-gray-800 mt-4 mb-2 first:mt-0">
+              {paragraph}
+            </h4>
+          );
+        }
+        
+        // Détecter les listes (lignes qui commencent par - ou •)
+        if (paragraph.match(/^[-•]/)) {
+          return (
+            <li key={index} className="ml-4 mb-1 text-gray-700">
+              {paragraph.replace(/^[-•]\s*/, '')}
+            </li>
+          );
+        }
+        
+        return (
+          <p key={index} className="mb-3 text-gray-700 leading-relaxed">
+            {paragraph}
+          </p>
+        );
+      });
+  };
+
   const copyToClipboard = () => {
     if (analysis) {
       navigator.clipboard.writeText(analysis);
@@ -57,6 +88,7 @@ const AIAnalysisPanel = ({ responses, sections, onCreateProject }: AIAnalysisPan
 
   const handleCreateProject = () => {
     if (analysis && onCreateProject) {
+      // Extraire une description de projet concise de l'analyse
       const lines = analysis.split('\n').filter(line => line.trim());
       const projectDescription = lines.slice(0, 3).join(' ').substring(0, 200) + '...';
       onCreateProject(projectDescription);
@@ -178,11 +210,13 @@ const AIAnalysisPanel = ({ responses, sections, onCreateProject }: AIAnalysisPan
               </div>
             </div>
             
-            {/* Remplacer le texte simple par la visualisation */}
-            <AnalysisVisualization 
-              responses={responses}
-              analysisText={analysis}
-            />
+            <div className="bg-white rounded-lg p-6 border shadow-sm">
+              <div className="prose prose-sm max-w-none">
+                <div className="space-y-2">
+                  {formatAnalysisText(analysis)}
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </CardContent>

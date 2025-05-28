@@ -17,22 +17,14 @@ interface ScianSectorSelectProps {
 }
 
 const ScianSectorSelect = ({ selectedSectorId, setSelectedSectorId }: ScianSectorSelectProps) => {
-  const handleValueChange = (value: string) => {
-    if (value === "none") {
-      setSelectedSectorId(undefined);
-    } else {
-      setSelectedSectorId(value);
-    }
-  };
-
   return (
     <div className="mb-6">
       <label htmlFor="scian-sector" className="block text-sm font-medium text-gray-700 mb-1">
         Secteur SCIAN (optionnel)
       </label>
       <Select 
-        value={selectedSectorId || "none"} 
-        onValueChange={handleValueChange}
+        value={selectedSectorId || ""} 
+        onValueChange={(value) => setSelectedSectorId(value || undefined)}
       >
         <SelectTrigger>
           <SelectValue placeholder="Sélectionnez un secteur industriel" />
@@ -40,7 +32,7 @@ const ScianSectorSelect = ({ selectedSectorId, setSelectedSectorId }: ScianSecto
         <SelectContent>
           <SelectGroup>
             <SelectLabel>Secteurs industriels</SelectLabel>
-            <SelectItem value="none">Aucun secteur spécifié</SelectItem>
+            <SelectItem value="">Aucun secteur spécifié</SelectItem>
             {SCIAN_SECTORS.map((sector) => (
               <SelectItem key={sector.id} value={sector.id}>
                 {sector.name} ({sector.id})
