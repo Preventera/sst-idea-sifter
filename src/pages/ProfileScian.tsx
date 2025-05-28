@@ -504,7 +504,7 @@ const ProfileScian = () => {
             
             // Recalculer le score total si c'est un critère
             if (field === 'criteria') {
-              const totalScore = Object.values(value).reduce((sum, score) => sum + score, 0);
+              const totalScore = Object.values(value).reduce((sum, score) => sum + Number(score), 0);
               updatedProject.totalScore = totalScore;
               updatedProject.priority = totalScore >= 32 ? 'Haute' : totalScore >= 16 ? 'Moyenne' : 'Faible';
             }
@@ -539,8 +539,8 @@ const ProfileScian = () => {
 
   const calculateMaturityAverage = () => {
     const maturity = profileData.aiProjects.organizationalMaturity;
-    const average = (maturity.aiStrategy + maturity.dataManagement + maturity.techInfrastructure + 
-                    maturity.talentsSkills + maturity.organizationalCulture) / 5;
+    const average = (Number(maturity.aiStrategy) + Number(maturity.dataManagement) + Number(maturity.techInfrastructure) + 
+                    Number(maturity.talentsSkills) + Number(maturity.organizationalCulture)) / 5;
     return Math.round(average * 10) / 10;
   };
 
