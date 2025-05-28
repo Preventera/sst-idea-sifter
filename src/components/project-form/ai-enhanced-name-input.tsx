@@ -26,7 +26,15 @@ const AIEnhancedNameInput = ({ name, setName, criteria, scianSectorId }: AIEnhan
         className="w-full"
       />
       
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mt-3 space-y-3">
+        {/* Toujours afficher le générateur de descriptions */}
+        <ProjectDescriptionGenerator
+          criteria={criteria}
+          scianSectorId={scianSectorId}
+          onGenerate={setName}
+        />
+        
+        {/* Afficher l'amélioration de texte seulement si il y a du texte */}
         {name.trim() && (
           <AITextEnhancer
             originalText={name}
@@ -35,12 +43,6 @@ const AIEnhancedNameInput = ({ name, setName, criteria, scianSectorId }: AIEnhan
             placeholder="Description du projet IA-SST"
           />
         )}
-        
-        <ProjectDescriptionGenerator
-          criteria={criteria}
-          scianSectorId={scianSectorId}
-          onGenerate={setName}
-        />
       </div>
     </div>
   );
