@@ -1,13 +1,12 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, X, BarChart3, FileText, CheckCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, BarChart3 } from "lucide-react";
 import { questionnaireSections } from "@/data/questionnaire-data";
 import QuestionnaireProgress from "./questionnaire-progress";
 import SectionValidation from "./section-validation";
@@ -32,8 +31,6 @@ const Questionnaire = ({ onClose, onCreateProject }: QuestionnaireProps) => {
 
   const totalQuestions = questionnaireSections.reduce((sum, section) => sum + section.questions.length, 0);
   const answeredQuestions = Object.keys(responses).length;
-  const progressPercentage = Math.round((answeredQuestions / totalQuestions) * 100);
-
   const currentSectionData = questionnaireSections[currentSection];
   const isLastSection = currentSection === questionnaireSections.length - 1;
 
@@ -69,7 +66,6 @@ const Questionnaire = ({ onClose, onCreateProject }: QuestionnaireProps) => {
 
   const handleCreateProjectFromAnalysis = (description: string) => {
     if (onCreateProject) {
-      // Créer des critères par défaut basés sur l'analyse
       const defaultCriteria: Criteria = {
         impact: 7,
         excellence: 6,
@@ -90,7 +86,7 @@ const Questionnaire = ({ onClose, onCreateProject }: QuestionnaireProps) => {
       };
       
       onCreateProject(project);
-      onClose(); // Fermer le questionnaire après création du projet
+      onClose();
     }
   };
 
@@ -253,7 +249,7 @@ const Questionnaire = ({ onClose, onCreateProject }: QuestionnaireProps) => {
               </Button>
 
               <div className="flex gap-2">
-                {answeredQuestions >= 5 && (
+                {answeredQuestions >= 3 && (
                   <Button
                     variant="outline"
                     onClick={() => setShowAnalysis(true)}
@@ -263,7 +259,7 @@ const Questionnaire = ({ onClose, onCreateProject }: QuestionnaireProps) => {
                   </Button>
                 )}
                 
-                {answeredQuestions >= 10 && (
+                {answeredQuestions >= 5 && (
                   <Button
                     variant="outline"
                     onClick={() => setShowSummary(true)}
@@ -293,7 +289,7 @@ const Questionnaire = ({ onClose, onCreateProject }: QuestionnaireProps) => {
               responses={responses}
             />
             
-            {answeredQuestions >= 3 && (
+            {answeredQuestions >= 2 && (
               <RealTimeRecommendations responses={responses} />
             )}
           </div>
