@@ -1,5 +1,6 @@
-
 import React, { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { Project } from "@/types/project";
 import ProjectForm from "@/components/project-form";
@@ -140,6 +141,8 @@ const Index = () => {
     setSectorFilter("all");
     setScoreFilter("all");
   };
+
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-gray-50">
