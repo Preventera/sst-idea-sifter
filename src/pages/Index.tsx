@@ -7,9 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
-import { Plus, Edit, Trash2, AlertCircle } from "lucide-react";
+import { Plus, Edit, Trash2, AlertCircle, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocalStorage } from '@/hooks/use-local-storage';
+import { Link } from 'react-router-dom';
 import ProjectForm from '@/components/project-form/project-form';
 import Questionnaire from '@/components/questionnaire';
 import { Project } from '@/types/project';
@@ -62,10 +63,18 @@ const Index = () => {
         <h1 className="text-3xl font-bold">
           Projets IA-SST
         </h1>
-        <Button onClick={() => setShowQuestionnaire(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nouveau projet (Questionnaire)
-        </Button>
+        <div className="flex gap-4">
+          <Link to="/profile-scian">
+            <Button variant="outline">
+              <User className="h-4 w-4 mr-2" />
+              Profil SCIAN HSE
+            </Button>
+          </Link>
+          <Button onClick={() => setShowQuestionnaire(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nouveau projet (Questionnaire)
+          </Button>
+        </div>
       </div>
 
       {showQuestionnaire && (
@@ -187,6 +196,9 @@ const Index = () => {
               <ul className="list-disc pl-4 text-sm text-gray-500">
                 <li>
                   Utilisez le bouton "Nouveau projet" pour ajouter un projet.
+                </li>
+                <li>
+                  Accédez au "Profil SCIAN HSE" pour configurer les informations de votre entreprise.
                 </li>
                 <li>
                   Remplissez le formulaire avec les informations du projet.
