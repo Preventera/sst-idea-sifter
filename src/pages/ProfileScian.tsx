@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { Building2, Users, Shield, User, ChevronRight, Save, Plus, Trash2, ArrowLeft } from 'lucide-react';
+import { Building2, Users, Shield, User, ChevronRight, Save, Plus, Trash2, ArrowLeft, Brain } from 'lucide-react';
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
@@ -32,6 +31,18 @@ const ProfileScian = () => {
       certifications: [],
       lastAudit: '',
       systemComponents: []
+    },
+    aiProjects: {
+      projects: [],
+      organizationalMaturity: {
+        aiStrategy: 1,
+        dataManagement: 1,
+        techInfrastructure: 1,
+        talentsSkills: 1,
+        organizationalCulture: 1
+      },
+      mainConcerns: [],
+      overallReadiness: ''
     },
     riskProfile: {
       primaryRisks: [],
@@ -296,6 +307,55 @@ const ProfileScian = () => {
     '72': ['Brûlures', 'Coupures', 'Troubles musculosquelettiques', 'Exposition à agents biologiques']
   };
 
+  // Données pour l'onglet Projets IA
+  const iso42001Criteria = [
+    { id: 'strategic', name: 'Pertinence stratégique', description: 'Alignement avec les objectifs d\'affaires' },
+    { id: 'innovation', name: 'Innovation et différenciation', description: 'Potentiel d\'innovation et avantage concurrentiel' },
+    { id: 'resources', name: 'Ressources et faisabilité', description: 'Disponibilité des ressources et faisabilité technique' },
+    { id: 'risks', name: 'Gestion des risques', description: 'Identification et mitigation des risques' },
+    { id: 'viability', name: 'Viabilité économique', description: 'Retour sur investissement et viabilité financière' },
+    { id: 'ethics', name: 'Éthique et conformité', description: 'Respect des principes éthiques et réglementaires' },
+    { id: 'governance', name: 'Gouvernance et pilotage', description: 'Structure de gouvernance et capacité de pilotage' },
+    { id: 'impact', name: 'Impact organisationnel', description: 'Impact sur l\'organisation et gestion du changement' }
+  ];
+
+  const maturityDimensions = [
+    { id: 'aiStrategy', name: 'Stratégie IA', description: 'Vision et stratégie organisationnelle IA' },
+    { id: 'dataManagement', name: 'Gestion des données', description: 'Qualité, gouvernance et architecture des données' },
+    { id: 'techInfrastructure', name: 'Infrastructure technologique', description: 'Capacités techniques et infrastructure IT' },
+    { id: 'talentsSkills', name: 'Talents et compétences', description: 'Compétences humaines et formation IA' },
+    { id: 'organizationalCulture', name: 'Culture organisationnelle', description: 'Adoption et culture d\'innovation IA' }
+  ];
+
+  const maturityLevels = [
+    { value: 1, label: 'Débutant', description: 'Aucune expérience, exploration initiale' },
+    { value: 2, label: 'En développement', description: 'Premières initiatives, apprentissage' },
+    { value: 3, label: 'Intermédiaire', description: 'Projets pilotes, processus en développement' },
+    { value: 4, label: 'Avancé', description: 'Déploiements opérationnels, processus matures' },
+    { value: 5, label: 'Expert', description: 'Leadership sectoriel, innovation continue' }
+  ];
+
+  const aiReadinessLevels = [
+    'Non préparé - Besoins de formation majeurs',
+    'Débutant - Formation et stratégie nécessaires',
+    'En développement - Projets pilotes recommandés',
+    'Prêt - Capacité de déploiement opérationnel',
+    'Leader - Innovation et excellence IA'
+  ];
+
+  const mainConcerns = [
+    'Sécurité et protection des données personnelles',
+    'Transparence et explicabilité des algorithmes',
+    'Biais et équité dans les décisions automatisées',
+    'Impact sur l\'emploi et transformation du travail',
+    'Responsabilité et gouvernance des systèmes IA',
+    'Formation et développement des compétences',
+    'Éthique et valeurs organisationnelles',
+    'Conformité réglementaire et juridique',
+    'Investissements et retour sur investissement',
+    'Intégration avec les systèmes existants'
+  ];
+
   const addActor = (type) => {
     const newActor = {
       id: Date.now(),
@@ -393,6 +453,97 @@ const ProfileScian = () => {
     updateFunction(newArray);
   };
 
+  // Nouvelles fonctions pour l'onglet Projets IA
+  const addAIProject = () => {
+    const newProject = {
+      id: Date.now(),
+      name: '',
+      description: '',
+      status: 'En planification',
+      criteria: {
+        strategic: 0,
+        innovation: 0,
+        resources: 0,
+        risks: 0,
+        viability: 0,
+        ethics: 0,
+        governance: 0,
+        impact: 0
+      },
+      totalScore: 0,
+      priority: 'Moyenne'
+    };
+
+    setProfileData(prev => ({
+      ...prev,
+      aiProjects: {
+        ...prev.aiProjects,
+        projects: [...prev.aiProjects.projects, newProject]
+      }
+    }));
+  };
+
+  const removeAIProject = (id) => {
+    setProfileData(prev => ({
+      ...prev,
+      aiProjects: {
+        ...prev.aiProjects,
+        projects: prev.aiProjects.projects.filter(project => project.id !== id)
+      }
+    }));
+  };
+
+  const updateAIProject = (id, field, value) => {
+    setProfileData(prev => ({
+      ...prev,
+      aiProjects: {
+        ...prev.aiProjects,
+        projects: prev.aiProjects.projects.map(project => {
+          if (project.id === id) {
+            const updatedProject = { ...project, [field]: value };
+            
+            // Recalculer le score total si c'est un critère
+            if (field === 'criteria') {
+              const totalScore = Object.values(value).reduce((sum, score) => sum + score, 0);
+              updatedProject.totalScore = totalScore;
+              updatedProject.priority = totalScore >= 32 ? 'Haute' : totalScore >= 16 ? 'Moyenne' : 'Faible';
+            }
+            
+            return updatedProject;
+          }
+          return project;
+        })
+      }
+    }));
+  };
+
+  const updateMaturityDimension = (dimension, value) => {
+    setProfileData(prev => ({
+      ...prev,
+      aiProjects: {
+        ...prev.aiProjects,
+        organizationalMaturity: {
+          ...prev.aiProjects.organizationalMaturity,
+          [dimension]: value
+        }
+      }
+    }));
+  };
+
+  const updateAIProjects = (field, value) => {
+    setProfileData(prev => ({
+      ...prev,
+      aiProjects: { ...prev.aiProjects, [field]: value }
+    }));
+  };
+
+  const calculateMaturityAverage = () => {
+    const maturity = profileData.aiProjects.organizationalMaturity;
+    const average = (maturity.aiStrategy + maturity.dataManagement + maturity.techInfrastructure + 
+                    maturity.talentsSkills + maturity.organizationalCulture) / 5;
+    return Math.round(average * 10) / 10;
+  };
+
   const renderActorSection = (type, title, actors) => (
     <div className="bg-white p-6 rounded-lg shadow-sm border">
       <div className="flex justify-between items-center mb-4">
@@ -475,6 +626,7 @@ const ProfileScian = () => {
     { id: 'actors', name: 'Acteurs', icon: Users },
     { id: 'policies', name: 'Politiques HSE', icon: Shield },
     { id: 'system', name: 'Système SST', icon: Shield },
+    { id: 'ai-projects', name: 'Projets IA', icon: Brain },
     { id: 'risks', name: 'Profil de Risque', icon: User }
   ];
 
@@ -498,18 +650,18 @@ const ProfileScian = () => {
             </Button>
           </div>
           <p className="text-gray-600">
-            Configuration du profil utilisateur pour l'évaluation des risques en santé, sécurité et environnement
+            Configuration du profil utilisateur pour l'évaluation des risques en santé, sécurité et environnement avec évaluation des projets IA
           </p>
         </div>
 
         {/* Navigation Tabs */}
         <div className="bg-white rounded-lg shadow-sm border mb-6">
-          <div className="flex border-b">
+          <div className="flex border-b overflow-x-auto">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-6 py-4 border-b-2 transition-colors ${
+                className={`flex items-center gap-2 px-6 py-4 border-b-2 transition-colors whitespace-nowrap ${
                   activeTab === tab.id
                     ? 'border-blue-600 text-blue-600 bg-blue-50'
                     : 'border-transparent text-gray-600 hover:text-gray-800 hover:bg-gray-50'
@@ -863,6 +1015,239 @@ const ProfileScian = () => {
                     <li>• <strong>Mobile-first :</strong> Applications mobiles pour la collecte de données terrain</li>
                     <li>• <strong>Intégration ERP :</strong> Connexion avec les systèmes existants (SAP, Oracle)</li>
                     <li>• <strong>Analytics avancés :</strong> Prédiction des incidents et analyses prédictives</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'ai-projects' && (
+            <div className="space-y-6">
+              {/* Évaluation des projets IA selon ISO 42001 */}
+              <div className="bg-white rounded-lg shadow-sm border p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-semibold text-gray-800">Évaluation des Projets IA (ISO 42001)</h2>
+                  <button
+                    onClick={addAIProject}
+                    className="flex items-center gap-2 px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
+                  >
+                    <Plus size={16} />
+                    Nouveau Projet IA
+                  </button>
+                </div>
+
+                {profileData.aiProjects.projects.length === 0 ? (
+                  <p className="text-gray-500 italic">Aucun projet IA ajouté</p>
+                ) : (
+                  <div className="space-y-6">
+                    {profileData.aiProjects.projects.map((project) => (
+                      <div key={project.id} className="border rounded-lg p-6 bg-gray-50">
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="flex-1">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Nom du projet</label>
+                                <input
+                                  type="text"
+                                  value={project.name}
+                                  onChange={(e) => updateAIProject(project.id, 'name', e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                  placeholder="Nom du projet IA"
+                                />
+                              </div>
+                              
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Statut</label>
+                                <select
+                                  value={project.status}
+                                  onChange={(e) => updateAIProject(project.id, 'status', e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                >
+                                  <option value="En planification">En planification</option>
+                                  <option value="En développement">En développement</option>
+                                  <option value="En test">En test</option>
+                                  <option value="Déployé">Déployé</option>
+                                  <option value="Suspendu">Suspendu</option>
+                                </select>
+                              </div>
+                            </div>
+                            
+                            <div className="mb-4">
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                              <textarea
+                                value={project.description}
+                                onChange={(e) => updateAIProject(project.id, 'description', e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                rows={3}
+                                placeholder="Description du projet et objectifs"
+                              />
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              {iso42001Criteria.map((criterion) => (
+                                <div key={criterion.id}>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    {criterion.name}
+                                    <span className="text-xs text-gray-500 block">{criterion.description}</span>
+                                  </label>
+                                  <select
+                                    value={project.criteria[criterion.id]}
+                                    onChange={(e) => {
+                                      const newCriteria = { ...project.criteria, [criterion.id]: parseInt(e.target.value) };
+                                      updateAIProject(project.id, 'criteria', newCriteria);
+                                    }}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                  >
+                                    <option value={0}>0 - Non évalué</option>
+                                    <option value={1}>1 - Très faible</option>
+                                    <option value={2}>2 - Faible</option>
+                                    <option value={3}>3 - Moyen</option>
+                                    <option value={4}>4 - Bon</option>
+                                    <option value={5}>5 - Excellent</option>
+                                  </select>
+                                </div>
+                              ))}
+                            </div>
+
+                            <div className="mt-4 p-4 bg-purple-50 rounded-lg">
+                              <div className="flex justify-between items-center">
+                                <span className="font-medium text-purple-800">Score total: {project.totalScore}/40</span>
+                                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                  project.priority === 'Haute' ? 'bg-red-100 text-red-800' :
+                                  project.priority === 'Moyenne' ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-green-100 text-green-800'
+                                }`}>
+                                  Priorité: {project.priority}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <button
+                            onClick={() => removeAIProject(project.id)}
+                            className="text-red-600 hover:text-red-800 ml-4"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="mt-6 bg-purple-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-medium text-purple-800 mb-2">Méthodologie d'évaluation ISO 42001</h3>
+                  <ul className="text-sm text-purple-700 space-y-1">
+                    <li>• <strong>Score 0-1:</strong> Projet non viable ou très risqué</li>
+                    <li>• <strong>Score 2-3:</strong> Projet nécessitant des améliorations importantes</li>
+                    <li>• <strong>Score 4-5:</strong> Projet prêt pour développement/déploiement</li>
+                    <li>• <strong>Priorité Haute:</strong> Score total ≥ 32/40</li>
+                    <li>• <strong>Priorité Moyenne:</strong> Score total 16-31/40</li>
+                    <li>• <strong>Priorité Faible:</strong> Score total ≤ 15/40</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Maturité organisationnelle IA */}
+              <div className="bg-white rounded-lg shadow-sm border p-6">
+                <h2 className="text-xl font-semibold text-gray-800 mb-6">Maturité Organisationnelle IA (Forum IA Québec)</h2>
+                
+                <div className="space-y-6">
+                  {maturityDimensions.map((dimension) => (
+                    <div key={dimension.id}>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {dimension.name}
+                        <span className="text-xs text-gray-500 block">{dimension.description}</span>
+                      </label>
+                      <div className="flex items-center gap-4">
+                        <input
+                          type="range"
+                          min="1"
+                          max="5"
+                          value={profileData.aiProjects.organizationalMaturity[dimension.id]}
+                          onChange={(e) => updateMaturityDimension(dimension.id, parseInt(e.target.value))}
+                          className="flex-1"
+                        />
+                        <span className="w-32 text-sm font-medium text-gray-700">
+                          {maturityLevels.find(level => level.value === profileData.aiProjects.organizationalMaturity[dimension.id])?.label}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {maturityLevels.find(level => level.value === profileData.aiProjects.organizationalMaturity[dimension.id])?.description}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-medium text-blue-800">Maturité moyenne: {calculateMaturityAverage()}/5</span>
+                  </div>
+                  <div className="text-sm text-blue-700">
+                    Niveau organisationnel: {
+                      calculateMaturityAverage() >= 4.5 ? 'Expert - Innovation continue' :
+                      calculateMaturityAverage() >= 3.5 ? 'Avancé - Déploiements opérationnels' :
+                      calculateMaturityAverage() >= 2.5 ? 'Intermédiaire - Projets pilotes' :
+                      calculateMaturityAverage() >= 1.5 ? 'En développement - Apprentissage' :
+                      'Débutant - Exploration initiale'
+                    }
+                  </div>
+                </div>
+              </div>
+
+              {/* Préoccupations principales */}
+              <div className="bg-white rounded-lg shadow-sm border p-6">
+                <h2 className="text-xl font-semibold text-gray-800 mb-6">Préoccupations Principales (Conseil de l'Innovation du Québec)</h2>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Principales préoccupations identifiées pour votre organisation
+                    </label>
+                    <div className="grid grid-cols-1 gap-3">
+                      {mainConcerns.map((concern) => (
+                        <label key={concern} className="flex items-center gap-3 p-3 bg-gray-50 rounded">
+                          <input
+                            type="checkbox"
+                            checked={profileData.aiProjects.mainConcerns.includes(concern)}
+                            onChange={() => toggleArrayItem(
+                              profileData.aiProjects.mainConcerns,
+                              concern,
+                              (newArray) => updateAIProjects('mainConcerns', newArray)
+                            )}
+                            className="w-4 h-4 text-blue-600"
+                          />
+                          <span className="text-sm text-gray-700">{concern}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Évaluation de la préparation globale de l'organisation
+                    </label>
+                    <select
+                      value={profileData.aiProjects.overallReadiness}
+                      onChange={(e) => updateAIProjects('overallReadiness', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Évaluer la préparation globale</option>
+                      {aiReadinessLevels.map((level) => (
+                        <option key={level} value={level}>{level}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="mt-6 bg-amber-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-medium text-amber-800 mb-2">Recommandations du Conseil de l'Innovation</h3>
+                  <ul className="text-sm text-amber-700 space-y-1">
+                    <li>• <strong>Formation continue :</strong> "L'IA exige un investissement soutenu en formation et développement des compétences"</li>
+                    <li>• <strong>Gouvernance éthique :</strong> "Mettre en place des comités d'éthique et des processus de validation"</li>
+                    <li>• <strong>Approche graduée :</strong> "Commencer par des projets pilotes avant le déploiement à grande échelle"</li>
+                    <li>• <strong>Collaboration :</strong> "Favoriser les partenariats avec les centres de recherche québécois"</li>
+                    <li>• <strong>Mesure d'impact :</strong> "Établir des KPIs clairs pour mesurer le succès des initiatives IA"</li>
                   </ul>
                 </div>
               </div>
