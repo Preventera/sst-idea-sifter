@@ -83,7 +83,12 @@ const Index = () => {
 
   // Si le questionnaire est ouvert, l'afficher en plein écran - MAINTENANT APRÈS TOUS LES HOOKS
   if (showQuestionnaire) {
-    return <Questionnaire onClose={() => setShowQuestionnaire(false)} />;
+    return (
+      <Questionnaire 
+        onClose={() => setShowQuestionnaire(false)} 
+        onCreateProject={handleAddProject}
+      />
+    );
   }
 
   const handleAddProject = (project: Project) => {

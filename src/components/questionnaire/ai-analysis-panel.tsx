@@ -3,18 +3,21 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Brain, FileText, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Brain, FileText, TrendingUp, AlertTriangle, Plus, Copy } from 'lucide-react';
 import { useAIAssistant } from '@/hooks/use-ai-assistant';
+import { useToast } from '@/hooks/use-toast';
 
 interface AIAnalysisPanelProps {
   responses: Record<number, { option: string; custom?: string }>;
   sections: any[];
+  onCreateProject?: (description: string) => void;
 }
 
-const AIAnalysisPanel = ({ responses, sections }: AIAnalysisPanelProps) => {
+const AIAnalysisPanel = ({ responses, sections, onCreateProject }: AIAnalysisPanelProps) => {
   const [analysis, setAnalysis] = useState<string | null>(null);
   const [analysisType, setAnalysisType] = useState<'synthesis' | 'patterns' | 'risks' | null>(null);
   const { analyzeContent, isLoading } = useAIAssistant();
+  const { toast } = useToast();
 
   const generateAnalysis = async (type: 'questionnaire_analysis' | 'response_patterns' | 'risk_assessment') => {
     const responseText = Object.entries(responses)
@@ -38,6 +41,62 @@ const AIAnalysisPanel = ({ responses, sections }: AIAnalysisPanelProps) => {
       setAnalysis(result);
       setAnalysisType(type === 'questionnaire_analysis' ? 'synthesis' : 
                      type === 'response_patterns' ? 'patterns' : 'risks');
+    }
+  };
+
+  const formatAnalysisText = (text: string) => {
+    // Diviser le texte en paragraphes et ajouter du formatage
+    return text
+      .split('\n')
+      .filter(line => line.trim())
+      .map((paragraph, index) => {
+        // Détecter les titres (lignes qui commencent par des majuscules ou des numéros)
+        if (paragraph.match(/^[A-Z\d][^.]*:/) || paragraph.match(/^\d+\./)) {
+          return (
+            <h4 key={index} className="font-semibold text-gray-800 mt-4 mb-2 first:mt-0">
+              {paragraph}
+            </h4>
+          );
+        }
+        
+        // Détecter les listes (lignes qui commencent par - ou •)
+        if (paragraph.match(/^[-•]/)) {
+          return (
+            <li key={index} className="ml-4 mb-1 text-gray-700">
+              {paragraph.replace(/^[-•]\s*/, '')}
+            </li>
+          );
+        }
+        
+        return (
+          <p key={index} className="mb-3 text-gray-700 leading-relaxed">
+            {paragraph}
+          </p>
+        );
+      });
+  };
+
+  const copyToClipboard = () => {
+    if (analysis) {
+      navigator.clipboard.writeText(analysis);
+      toast({
+        title: "Copié !",
+        description: "L'analyse a été copiée dans le presse-papiers."
+      });
+    }
+  };
+
+  const handleCreateProject = () => {
+    if (analysis && onCreateProject) {
+      // Extraire une description de projet concise de l'analyse
+      const lines = analysis.split('\n').filter(line => line.trim());
+      const projectDescription = lines.slice(0, 3).join(' ').substring(0, 200) + '...';
+      onCreateProject(projectDescription);
+      
+      toast({
+        title: "Projet créé !",
+        description: "Un nouveau projet a été créé à partir de l'analyse."
+      });
     }
   };
 
@@ -66,7 +125,7 @@ const AIAnalysisPanel = ({ responses, sections }: AIAnalysisPanelProps) => {
   ];
 
   const responseCount = Object.keys(responses).length;
-  const canAnalyze = responseCount >= 5; // Minimum 5 réponses pour une analyse pertinente
+  const canAnalyze = responseCount >= 5;
 
   if (!canAnalyze) {
     return (
@@ -121,19 +180,40 @@ const AIAnalysisPanel = ({ responses, sections }: AIAnalysisPanelProps) => {
                 {analysisType === 'synthesis' ? 'Synthèse' : 
                  analysisType === 'patterns' ? 'Patterns' : 'Risques'}
               </Badge>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setAnalysis(null)}
-              >
-                Nouvelle analyse
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={copyToClipboard}
+                >
+                  <Copy className="h-4 w-4 mr-1" />
+                  Copier
+                </Button>
+                {onCreateProject && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCreateProject}
+                    className="bg-green-50 hover:bg-green-100 text-green-700"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Créer un projet
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setAnalysis(null)}
+                >
+                  Nouvelle analyse
+                </Button>
+              </div>
             </div>
             
-            <div className="bg-white rounded-lg p-4 border">
+            <div className="bg-white rounded-lg p-6 border shadow-sm">
               <div className="prose prose-sm max-w-none">
-                <div className="whitespace-pre-wrap text-gray-700">
-                  {analysis}
+                <div className="space-y-2">
+                  {formatAnalysisText(analysis)}
                 </div>
               </div>
             </div>
