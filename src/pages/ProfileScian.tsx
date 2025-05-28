@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Building2, Users, Shield, User, ChevronRight, Save, Plus, Trash2, ArrowLeft, Brain } from 'lucide-react';
 import { useNavigate } from "react-router-dom";
@@ -504,8 +505,9 @@ const ProfileScian = () => {
             
             // Recalculer le score total si c'est un critère
             if (field === 'criteria') {
-              const scores = Object.values(value) as number[];
-              const totalScore = scores.reduce((sum, score) => sum + Number(score), 0);
+              const criteriaValues = value as Record<string, number>;
+              const scores = Object.values(criteriaValues);
+              const totalScore = scores.reduce((sum, score) => sum + score, 0);
               updatedProject.totalScore = totalScore;
               updatedProject.priority = totalScore >= 32 ? 'Haute' : totalScore >= 16 ? 'Moyenne' : 'Faible';
             }
