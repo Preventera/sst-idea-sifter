@@ -1,12 +1,11 @@
-
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
 import CriteriaSlider from "./criteria-slider";
+import AIEnhancedNameInput from "./project-form/ai-enhanced-name-input";
 import { Project, Criteria } from "../types/project";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -127,18 +126,11 @@ const ProjectForm = ({ onAddProject, editingProject, onUpdateProject, onCancelEd
           <CardTitle>{editingProject ? "Modifier le projet" : "Nouveau projet IA-SST"}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="mb-6">
-            <label htmlFor="project-name" className="block text-sm font-medium text-gray-700 mb-1">
-              Nom / Description du projet
-            </label>
-            <Input
-              id="project-name"
-              placeholder="Ex: Caméra intelligente pour détecter le non-port des EPI"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full"
-            />
-          </div>
+          <AIEnhancedNameInput
+            name={name}
+            setName={setName}
+            criteria={criteria}
+          />
 
           <Alert className="mb-4">
             <AlertCircle className="h-4 w-4" />
