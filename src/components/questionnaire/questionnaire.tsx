@@ -67,6 +67,10 @@ const Questionnaire = ({ onClose, onCreateProject }: QuestionnaireProps) => {
     }
   };
 
+  const handleSectionClick = (index: number) => {
+    setCurrentSection(index);
+  };
+
   const handleCreateProjectFromAnalysis = (description: string) => {
     if (onCreateProject) {
       // Créer des critères par défaut basés sur l'analyse
@@ -175,11 +179,10 @@ const Questionnaire = ({ onClose, onCreateProject }: QuestionnaireProps) => {
 
         {/* Barre de progression */}
         <QuestionnaireProgress 
+          sections={questionnaireSections}
           currentSection={currentSection}
-          totalSections={questionnaireSections.length}
-          answeredQuestions={answeredQuestions}
-          totalQuestions={totalQuestions}
-          completedSections={completedSections}
+          responses={responses}
+          onSectionClick={handleSectionClick}
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -4,11 +4,14 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CheckCircle, AlertTriangle, Info } from "lucide-react";
 
 interface SectionValidationProps {
-  section: any;
+  currentSection: number;
+  sections: any[];
   responses: Record<number, { option: string; custom?: string }>;
 }
 
-const SectionValidation = ({ section, responses }: SectionValidationProps) => {
+const SectionValidation = ({ currentSection, sections, responses }: SectionValidationProps) => {
+  const section = sections[currentSection];
+  
   const getValidationStatus = () => {
     const answeredQuestions = section.questions.filter((q: any) => responses[q.id]?.option).length;
     const totalQuestions = section.questions.length;

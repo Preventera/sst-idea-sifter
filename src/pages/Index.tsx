@@ -27,6 +27,11 @@ const Index = () => {
   const [sectorFilter, setSectorFilter] = useState("all");
   const [scoreFilter, setScoreFilter] = useState("all");
 
+  // Fonction pour ajouter un projet - définie avant son utilisation
+  const handleAddProject = (project: Project) => {
+    setProjects([...projects, project]);
+  };
+
   // Logique de filtrage - TOUS LES HOOKS DOIVENT ÊTRE APPELÉS AVANT TOUT RETURN CONDITIONNEL
   const filteredProjects = useMemo(() => {
     return projects.filter(project => {
@@ -90,10 +95,6 @@ const Index = () => {
       />
     );
   }
-
-  const handleAddProject = (project: Project) => {
-    setProjects([...projects, project]);
-  };
 
   const handleUpdateProject = (updatedProject: Project) => {
     setProjects(
