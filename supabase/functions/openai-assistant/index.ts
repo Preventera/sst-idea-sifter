@@ -16,17 +16,22 @@ serve(async (req) => {
     
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY')
     if (!openaiApiKey) {
+      console.error('OPENAI_API_KEY not found in environment')
       throw new Error('OpenAI API key not configured')
     }
 
+    console.log('Processing request with type:', type)
+
     const systemPrompts = {
-      project_description: "Tu es un expert en IA-SST qui aide à rédiger des descriptions de projets claires et précises. Génère une description professionnelle basée sur les critères fournis.",
+      project_description: "Tu es un expert en IA-SST qui aide à rédiger des descriptions de projets claires et précises. Génère une description professionnelle et concrète d'un projet d'intelligence artificielle pour la santé-sécurité au travail, basée sur les critères fournis. La description doit être pratique, réalisable et spécifique au domaine SST.",
       project_improvement: "Tu es un assistant de rédaction spécialisé en SST. Améliore le texte fourni pour le rendre plus clair, professionnel et adapté au contexte IA-SST.",
       questionnaire_synthesis: "Tu es un analyste expert en SST qui génère des synthèses structurées. Analyse les réponses du questionnaire et produis une synthèse claire avec des recommandations.",
       project_suggestions: "Tu es un consultant en IA-SST qui suggère des noms de projets pertinents basés sur le secteur d'activité et les critères."
     }
 
-    const systemPrompt = systemPrompts[type as keyof typeof systemPrompts] || systemPrompts.project_improvement
+    const systemPrompt = systemPrompts[type as keyof typeof systemPrompts] || systemPrompts.project_description
+
+    console.log('Making request to OpenAI API...')
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -45,12 +50,15 @@ serve(async (req) => {
       }),
     })
 
-    const data = await response.json()
-    
     if (!response.ok) {
-      throw new Error(data.error?.message || 'OpenAI API error')
+      const errorData = await response.json()
+      console.error('OpenAI API error:', errorData)
+      throw new Error(errorData.error?.message || `OpenAI API error: ${response.status}`)
     }
 
+    const data = await response.json()
+    console.log('OpenAI response received successfully')
+    
     return new Response(
       JSON.stringify({ 
         result: data.choices[0].message.content,

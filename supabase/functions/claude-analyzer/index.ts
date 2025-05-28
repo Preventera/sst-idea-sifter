@@ -16,17 +16,22 @@ serve(async (req) => {
     
     const claudeApiKey = Deno.env.get('ANTHROPIC_API_KEY')
     if (!claudeApiKey) {
+      console.error('ANTHROPIC_API_KEY not found in environment')
       throw new Error('Anthropic API key not configured')
     }
 
+    console.log('Processing Claude request with analysisType:', analysisType)
+
     const systemPrompts = {
-      questionnaire_analysis: "Tu es un expert en analyse de données SST. Analyse les réponses du questionnaire IGNITIA et identifie les patterns, priorités et recommandations clés. Fournis une analyse structurée avec des insights actionnables.",
+      questionnaire_analysis: "Tu es un expert en analyse de données SST. Analyse les réponses du questionnaire IGNITIA et identifie les patterns, priorités et recommandations clés. Fournis une analyse structurée avec des insights actionnables pour l'amélioration de la sécurité au travail.",
       response_patterns: "Tu es un analyste de données spécialisé en SST. Détecte les patterns dans les réponses et identifie les lacunes ou incohérences potentielles.",
       risk_assessment: "Tu es un expert en évaluation des risques SST. Analyse le contenu fourni et identifie les risques prioritaires à adresser.",
       compliance_check: "Tu es un expert en conformité réglementaire SST. Vérifie la conformité du projet avec les exigences réglementaires et identifie les points d'attention."
     }
 
     const systemPrompt = systemPrompts[analysisType as keyof typeof systemPrompts] || systemPrompts.questionnaire_analysis
+
+    console.log('Making request to Claude API...')
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -47,11 +52,14 @@ serve(async (req) => {
       }),
     })
 
-    const data = await response.json()
-    
     if (!response.ok) {
-      throw new Error(data.error?.message || 'Claude API error')
+      const errorData = await response.json()
+      console.error('Claude API error:', errorData)
+      throw new Error(errorData.error?.message || `Claude API error: ${response.status}`)
     }
+
+    const data = await response.json()
+    console.log('Claude response received successfully')
 
     return new Response(
       JSON.stringify({ 
