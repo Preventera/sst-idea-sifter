@@ -20,126 +20,101 @@ export interface QuestionnaireSection {
 
 export const questionnaireSections: QuestionnaireSection[] = [
   {
-    id: "objectifs",
-    title: "Objectifs IA-SST",
-    description: "Définissez les objectifs principaux de votre projet IA en santé-sécurité au travail",
+    id: "contexte",
+    title: "Contexte organisationnel",
+    description: "Comprenons d'abord votre environnement de travail et vos enjeux SST",
     questions: [
       {
         id: 1,
-        question: "Quel est l'objectif principal de votre solution IA-SST ?",
+        question: "Quel est votre secteur d'activité principal ?",
         options: [
-          { id: "reduction", text: "Réduction des incidents et accidents de travail" },
-          { id: "conformite", text: "Amélioration de la conformité réglementaire" },
-          { id: "predictif", text: "Analyse prédictive des risques" },
-          { id: "formation", text: "Formation et sensibilisation du personnel" },
-          { id: "monitoring", text: "Surveillance continue de l'environnement de travail" }
+          { id: "construction", text: "Construction" },
+          { id: "manufacture", text: "Fabrication/Manufacturing" },
+          { id: "sante", text: "Santé et services sociaux" },
+          { id: "transport", text: "Transport et entreposage" },
+          { id: "services", text: "Services professionnels" },
+          { id: "autre", text: "Autre secteur" }
         ],
         allowCustom: true
       },
       {
         id: 2,
-        question: "Quels processus souhaitez-vous automatiser en priorité ?",
+        question: "Quelle est la taille de votre organisation ?",
         options: [
-          { id: "veille", text: "Veille réglementaire et gestion documentaire" },
-          { id: "evaluation", text: "Évaluation des risques" },
-          { id: "reporting", text: "Génération de rapports de sécurité" },
-          { id: "inspection", text: "Inspections et audits de sécurité" },
-          { id: "incidents", text: "Gestion des incidents et enquêtes" }
-        ],
-        allowCustom: true
-      }
-    ]
-  },
-  {
-    id: "donnees",
-    title: "Données et Sources",
-    description: "Identifiez les sources de données disponibles pour votre projet",
-    questions: [
+          { id: "petite", text: "Petite (moins de 50 employés)" },
+          { id: "moyenne", text: "Moyenne (50-250 employés)" },
+          { id: "grande", text: "Grande (plus de 250 employés)" }
+        ]
+      },
       {
         id: 3,
-        question: "Quelles sont vos principales sources de données internes ?",
+        question: "Quels sont vos principaux défis SST actuels ?",
         options: [
-          { id: "rapports", text: "Rapports d'incidents, données IoT, images/vidéos" },
-          { id: "rh", text: "Données RH et formation du personnel" },
-          { id: "maintenance", text: "Données de maintenance et équipements" },
-          { id: "environnement", text: "Mesures environnementales (bruit, air, température)" },
-          { id: "conformite", text: "Documents de conformité et procédures" }
+          { id: "accidents", text: "Réduction du nombre d'accidents" },
+          { id: "conformite", text: "Amélioration de la conformité réglementaire" },
+          { id: "culture", text: "Développement d'une culture de sécurité" },
+          { id: "formation", text: "Formation et sensibilisation du personnel" },
+          { id: "couts", text: "Maîtrise des coûts liés aux accidents" }
         ],
         allowCustom: true
-      },
+      }
+    ]
+  },
+  {
+    id: "besoins",
+    title: "Identification des besoins",
+    description: "Identifions vos besoins spécifiques en matière d'intelligence artificielle",
+    questions: [
       {
         id: 4,
-        question: "Sous quelle forme souhaitez-vous la restitution des résultats ?",
+        question: "Dans quels domaines souhaitez-vous intégrer l'IA ?",
         options: [
-          { id: "alertes", text: "Alertes en temps réel" },
-          { id: "dashboards", text: "Tableaux de bord interactifs" },
-          { id: "rapports", text: "Rapports automatisés" },
-          { id: "mobile", text: "Notifications mobiles" },
-          { id: "integration", text: "Intégration dans systèmes existants" }
+          { id: "prevention", text: "Prévention des accidents" },
+          { id: "surveillance", text: "Surveillance des comportements à risque" },
+          { id: "analyse", text: "Analyse prédictive des incidents" },
+          { id: "formation", text: "Formation et simulation" },
+          { id: "conformite", text: "Gestion de la conformité" }
         ],
         allowCustom: true
-      }
-    ]
-  },
-  {
-    id: "contexte",
-    title: "Contexte d'Usage",
-    description: "Précisez l'environnement et les utilisateurs cibles",
-    questions: [
+      },
       {
         id: 5,
-        question: "Dans quel type de milieu sera déployée la solution ?",
+        question: "Quel type de données SST collectez-vous actuellement ?",
         options: [
-          { id: "usine", text: "Environnement industriel/usine" },
-          { id: "bureau", text: "Environnement de bureau" },
-          { id: "chantier", text: "Chantiers de construction" },
-          { id: "laboratoire", text: "Laboratoires" },
-          { id: "transport", text: "Transport et logistique" }
-        ],
-        allowCustom: true
-      },
-      {
-        id: 6,
-        question: "Quelles catégories de risques sont prioritaires ?",
-        options: [
-          { id: "respiratoires", text: "Risques respiratoires et exposition chimique" },
-          { id: "ergonomiques", text: "Troubles musculo-squelettiques" },
-          { id: "machines", text: "Sécurité des machines et équipements" },
-          { id: "incendie", text: "Risques d'incendie et explosion" },
-          { id: "psychosociaux", text: "Risques psychosociaux" }
+          { id: "incidents", text: "Rapports d'incidents et d'accidents" },
+          { id: "inspections", text: "Résultats d'inspections" },
+          { id: "formations", text: "Données de formation" },
+          { id: "comportements", text: "Observations comportementales" },
+          { id: "aucune", text: "Peu ou pas de données structurées" }
         ],
         allowCustom: true
       }
     ]
   },
   {
-    id: "utilisateurs",
-    title: "Utilisateurs et Interactions",
-    description: "Définissez qui utilisera la solution et comment",
+    id: "contraintes",
+    title: "Contraintes et ressources",
+    description: "Évaluons vos contraintes techniques et budgétaires",
     questions: [
       {
-        id: 7,
-        question: "Qui sont les utilisateurs principaux ?",
+        id: 6,
+        question: "Quel est votre budget approximatif pour un projet IA-SST ?",
         options: [
-          { id: "operateurs", text: "Opérateurs et travailleurs de terrain" },
-          { id: "superviseurs", text: "Superviseurs et chefs d'équipe" },
-          { id: "hse", text: "Responsables HSE/sécurité" },
-          { id: "direction", text: "Direction et management" },
-          { id: "externes", text: "Intervenants externes (contractors)" }
-        ],
-        allowCustom: true
+          { id: "petit", text: "Moins de 10 000 $" },
+          { id: "moyen", text: "10 000 $ - 50 000 $" },
+          { id: "grand", text: "50 000 $ - 200 000 $" },
+          { id: "important", text: "Plus de 200 000 $" }
+        ]
       },
       {
-        id: 8,
-        question: "Quel type d'interaction privilégiez-vous ?",
+        id: 7,
+        question: "Avez-vous des ressources techniques internes ?",
         options: [
-          { id: "conversationnel", text: "Assistant conversationnel/chatbot" },
-          { id: "tactile", text: "Interface tactile intuitive" },
-          { id: "vocal", text: "Commandes vocales" },
-          { id: "automatique", text: "Traitement automatique en arrière-plan" },
-          { id: "mixte", text: "Approche mixte selon le contexte" }
-        ],
-        allowCustom: true
+          { id: "oui", text: "Oui, équipe IT expérimentée" },
+          { id: "limite", text: "Ressources limitées" },
+          { id: "non", text: "Aucune ressource technique" },
+          { id: "externe", text: "Recours à des prestataires externes" }
+        ]
       }
     ]
   }

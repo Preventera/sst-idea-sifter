@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,6 +38,10 @@ const Index = () => {
 
   const handleCancelEdit = () => {
     setEditingProject(null);
+  };
+
+  const handleSortChange = (value: string) => {
+    setSortBy(value as "score" | "name");
   };
 
   const sortedProjects = [...projects].sort((a, b) => {
@@ -87,7 +92,7 @@ const Index = () => {
 
           {/* Filtres et tris */}
           <div className="flex items-center justify-between mb-4">
-            <Select onValueChange={setSortBy}>
+            <Select onValueChange={handleSortChange}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Trier par..." />
               </SelectTrigger>
