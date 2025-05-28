@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Building2, Users, Shield, User, Plus, Trash2, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -1070,7 +1069,7 @@ const SCIANProfileInterface = () => {
                                   value={project.description}
                                   onChange={(e) => updateAIProject(project.id, 'description', e.target.value)}
                                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                  rows="3"
+                                  rows={3}
                                   placeholder="Description détaillée du projet IA"
                                 />
                               </div>
