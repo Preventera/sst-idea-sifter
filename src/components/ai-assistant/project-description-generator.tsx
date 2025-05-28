@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Wand2, Check } from 'lucide-react';
+import { Sparkles, Wand2, Check, RefreshCw } from 'lucide-react';
 import { useAIAssistant } from '@/hooks/use-ai-assistant';
 import { Criteria } from '@/types/project';
+import LLMSelector, { LLMProvider } from './llm-selector';
 
 interface ProjectDescriptionGeneratorProps {
   criteria: Criteria;
@@ -17,7 +18,8 @@ interface ProjectDescriptionGeneratorProps {
 const ProjectDescriptionGenerator = ({ criteria, scianSectorId, onGenerate }: ProjectDescriptionGeneratorProps) => {
   const [showGenerator, setShowGenerator] = useState(false);
   const [generatedDescriptions, setGeneratedDescriptions] = useState<string[]>([]);
-  const { generateContent, isLoading } = useAIAssistant();
+  const [selectedLLM, setSelectedLLM] = useState<LLMProvider>('openai');
+  const { generateContent, analyzeContent, isLoading } = useAIAssistant();
 
   const generateDescriptions = async () => {
     const criteriaText = Object.entries(criteria)
@@ -33,12 +35,24 @@ const ProjectDescriptionGenerator = ({ criteria, scianSectorId, onGenerate }: Pr
     ];
 
     const descriptions = [];
+    
     for (const prompt of prompts) {
-      const result = await generateContent({
-        type: 'project_description',
-        prompt,
-        context
-      });
+      let result = null;
+      
+      if (selectedLLM === 'openai') {
+        result = await generateContent({
+          type: 'project_description',
+          prompt,
+          context
+        });
+      } else {
+        result = await analyzeContent({
+          analysisType: 'questionnaire_analysis',
+          text: `Génère une description de projet basée sur: ${prompt}`,
+          context
+        });
+      }
+      
       if (result) descriptions.push(result);
     }
 
@@ -49,36 +63,66 @@ const ProjectDescriptionGenerator = ({ criteria, scianSectorId, onGenerate }: Pr
   const handleSelectDescription = (description: string) => {
     onGenerate(description);
     setShowGenerator(false);
+    setGeneratedDescriptions([]);
+  };
+
+  const handleNewGeneration = () => {
+    setGeneratedDescriptions([]);
+    generateDescriptions();
   };
 
   if (showGenerator) {
     return (
       <Card className="border-purple-200 bg-purple-50">
         <CardHeader className="pb-3">
-          <div className="flex items-center gap-2">
-            <Wand2 className="h-4 w-4 text-purple-600" />
-            <CardTitle className="text-sm text-purple-800">Suggestions de projets IA</CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Wand2 className="h-4 w-4 text-purple-600" />
+              <CardTitle className="text-sm text-purple-800">
+                Suggestions générées par {selectedLLM === 'openai' ? 'OpenAI' : 'Claude'}
+              </CardTitle>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleNewGeneration}
+              disabled={isLoading}
+            >
+              <RefreshCw className="h-4 w-4 mr-1" />
+              Régénérer
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {generatedDescriptions.map((description, index) => (
-              <div key={index} className="border rounded-lg p-3 bg-white">
-                <p className="text-sm text-gray-700 mb-3">{description}</p>
-                <Button
-                  size="sm"
-                  onClick={() => handleSelectDescription(description)}
-                  className="bg-purple-600 hover:bg-purple-700"
-                >
-                  <Check className="h-4 w-4 mr-1" />
-                  Utiliser cette description
-                </Button>
+            {generatedDescriptions.length > 0 ? (
+              generatedDescriptions.map((description, index) => (
+                <div key={index} className="border rounded-lg p-3 bg-white">
+                  <p className="text-sm text-gray-700 mb-3">{description}</p>
+                  <Button
+                    size="sm"
+                    onClick={() => handleSelectDescription(description)}
+                    className="bg-purple-600 hover:bg-purple-700"
+                  >
+                    <Check className="h-4 w-4 mr-1" />
+                    Utiliser cette description
+                  </Button>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-4">
+                <div className="animate-spin h-6 w-6 border-2 border-purple-600 border-t-transparent rounded-full mx-auto mb-2"></div>
+                <p className="text-sm text-gray-600">Génération en cours...</p>
               </div>
-            ))}
+            )}
+            
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setShowGenerator(false)}
+              onClick={() => {
+                setShowGenerator(false);
+                setGeneratedDescriptions([]);
+              }}
             >
               Fermer
             </Button>
@@ -89,20 +133,13 @@ const ProjectDescriptionGenerator = ({ criteria, scianSectorId, onGenerate }: Pr
   }
 
   return (
-    <div className="flex gap-2 items-center">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={generateDescriptions}
-        disabled={isLoading}
-        className="text-purple-600 border-purple-200 hover:bg-purple-50"
-      >
-        <Sparkles className="h-4 w-4 mr-1" />
-        {isLoading ? 'Génération...' : '🪄 Générer des idées'}
-      </Button>
-      <Badge variant="outline" className="text-xs text-purple-600">
-        IA Générative
-      </Badge>
+    <div className="space-y-3">
+      <LLMSelector
+        selectedLLM={selectedLLM}
+        onLLMChange={setSelectedLLM}
+        onGenerate={generateDescriptions}
+        isLoading={isLoading}
+      />
     </div>
   );
 };
