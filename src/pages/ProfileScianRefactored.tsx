@@ -7,11 +7,15 @@ import { Button } from "@/components/ui/button";
 import CompanyTab from '@/components/profile-scian/tabs/CompanyTab';
 import ActorsTab from '@/components/profile-scian/tabs/ActorsTab';
 import PoliciesTab from '@/components/profile-scian/tabs/PoliciesTab';
+import SystemTab from '@/components/profile-scian/tabs/SystemTab';
+import RisksTab from '@/components/profile-scian/tabs/RisksTab';
 
 // Importation des hooks personnalisés
 import { useCompanyData } from '@/hooks/profile-scian/useCompanyData';
 import { useActorsData } from '@/hooks/profile-scian/useActorsData';
 import { usePoliciesData } from '@/hooks/profile-scian/usePoliciesData';
+import { useSystemData } from '@/hooks/profile-scian/useSystemData';
+import { useRiskProfileData } from '@/hooks/profile-scian/useRiskProfileData';
 
 // Importation des types
 import { Actor, ProfileScianData } from '@/types/profile-scian';
@@ -72,6 +76,25 @@ const ProfileScianRefactored: React.FC = () => {
     policiesData,
     updatePolicyField
   } = usePoliciesData();
+  
+  // Hook pour le système SST
+  const {
+    systemData,
+    selectedSystemType,
+    updateSystemField,
+    toggleArrayItem: toggleSystemArrayItem,
+    getSystemComponentsByType
+  } = useSystemData();
+  
+  // Hook pour le profil de risque
+  const {
+    riskProfileData,
+    updateRiskProfileField,
+    updateOrganizationalContextField,
+    toggleRiskProfileArrayItem,
+    toggleOrganizationalContextArrayItem,
+    getSectorRisks
+  } = useRiskProfileData();
   
   // Fonction pour ajouter un acteur selon le type
   const handleAddActor = (type: 'actors' | 'sstCommittee' | 'cossMembers' | 'cstcMembers' | 'management') => {
@@ -152,29 +175,8 @@ const ProfileScianRefactored: React.FC = () => {
       cstcMembers,
       management,
       hsePolicies: policiesData,
-      sstManagementSystem: {
-        hasImplementedSystem: false,
-        systemType: '',
-        certifications: [],
-        lastAudit: '',
-        systemComponents: []
-      },
-      riskProfile: {
-        primaryRisks: [],
-        riskLevel: '',
-        previousIncidents: false,
-        organizationalContext: {
-          workOrganization: '',
-          shiftPatterns: [],
-          subcontractingLevel: '',
-          workforceStability: '',
-          safetyClimate: '',
-          communicationMethods: [],
-          decisionMakingProcess: '',
-          changeManagement: ''
-        },
-        specificSectorRisks: []
-      }
+      sstManagementSystem: systemData,
+      riskProfile: riskProfileData
     };
     
     // Ici, vous pourriez sauvegarder les données dans localStorage ou les envoyer à une API
@@ -268,21 +270,25 @@ const ProfileScianRefactored: React.FC = () => {
           )}
 
           {activeTab === 'system' && (
-            <div className="bg-white rounded-lg shadow-sm border p-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-6">Système SST</h2>
-              <p className="text-gray-500 italic">
-                L'onglet Système SST est en cours d'implémentation...
-              </p>
-            </div>
+            <SystemTab
+              systemData={systemData}
+              selectedSystemType={selectedSystemType}
+              updateSystemField={updateSystemField}
+              toggleArrayItem={toggleSystemArrayItem}
+              getSystemComponentsByType={getSystemComponentsByType}
+            />
           )}
 
           {activeTab === 'risks' && (
-            <div className="bg-white rounded-lg shadow-sm border p-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-6">Profil de Risque</h2>
-              <p className="text-gray-500 italic">
-                L'onglet Profil de Risque est en cours d'implémentation...
-              </p>
-            </div>
+            <RisksTab
+              riskProfileData={riskProfileData}
+              sectorCode={companyData.sector}
+              updateRiskProfileField={updateRiskProfileField}
+              updateOrganizationalContextField={updateOrganizationalContextField}
+              toggleRiskProfileArrayItem={toggleRiskProfileArrayItem}
+              toggleOrganizationalContextArrayItem={toggleOrganizationalContextArrayItem}
+              getSectorRisks={getSectorRisks}
+            />
           )}
         </div>
 
