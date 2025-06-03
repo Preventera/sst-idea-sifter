@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import AITextEnhancer from '@/components/ai-assistant/ai-text-enhancer';
@@ -14,7 +13,7 @@ interface AIEnhancedNameInputProps {
 }
 
 const AIEnhancedNameInput = ({ name, setName, criteria, scianSectorId }: AIEnhancedNameInputProps) => {
-  const [selectedLLM, setSelectedLLM] = useState<LLMProvider>('openai');
+  const [selectedLLM, setSelectedLLM] = useState<LLMProvider>('claude');
   const { generateContent, analyzeContent, isLoading } = useAIAssistant();
 
   console.log('AIEnhancedNameInput rendered'); // Debug log
@@ -47,9 +46,10 @@ const AIEnhancedNameInput = ({ name, setName, criteria, scianSectorId }: AIEnhan
           context
         });
       } else {
+        // ✅ CORRECTION: Utiliser 'project_ideas' au lieu de 'questionnaire_analysis'
         result = await analyzeContent({
-          analysisType: 'questionnaire_analysis',
-          text: `Génère une description de projet basée sur: ${prompt}`,
+          analysisType: 'project_ideas',
+          text: prompt,
           context
         });
       }

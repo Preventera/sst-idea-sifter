@@ -1,31 +1,24 @@
-
-export interface Criteria {
-  impact: number;
-  excellence: number;
-  faisabilite: number;
-  gouvernance: number;
-  securite: number;
-  acceptabilite: number;
-  perennite: number;
-}
+// src/types/project.ts
 
 export interface Project {
   id: string;
   name: string;
-  criteria: Criteria;
-  score: number;
-  scianSectorId?: string; // L'ID du secteur SCIAN (optionnel)
-  priority?: {
-    score: number;     // Score calculé selon les critères du secteur
-    level: 'high' | 'medium' | 'low';  // Niveau de priorité
-    details?: {
-      conformiteLSST: number;
-      mortalityImpact: number;
-      sectorPrevalence: number;
-      aiPreventivePotential: number;
-      legislationCompliance: number;
-      dataAvailability: number;
-      implementationDelay: number;
-    }; // Détails des scores par critère
+  ideas: string[]; 
+  scores: {
+    impact: number;
+    excellence: number;
+    faisabilite: number;
+    gouvernance: number;
+    securite: number;
+    acceptabilite: number;
+    perennite: number;
   };
+  score: number;              // score global calculé (ex. moyenne pondérée)
+  scianSectorId: string | null;
+  priority: {
+    score: number;
+    level: string;
+  } | null;
+  created_at?: string;
+  updated_at?: string;
 }

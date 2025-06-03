@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -87,6 +86,18 @@ const ProjectForm = ({ onAddProject, editingProject, onUpdateProject, onCancelEd
           <CardTitle>{editingProject ? "Modifier le projet" : "Nouveau projet IA-SST"}</CardTitle>
         </CardHeader>
         <CardContent>
+          {/* TEST TEMPORAIRE - DIAGNOSTIC ASSISTANT IA */}
+          <div className="border-2 border-red-500 bg-red-50 p-4 mb-4 rounded-lg">
+            <h4 className="text-red-600 font-bold text-lg">🔧 DEBUG: Assistant IA</h4>
+            <p className="text-red-700 mb-2">Si vous voyez cette section rouge, le problème vient du composant AIEnhancedNameInput</p>
+            <div className="bg-white p-2 rounded border text-sm">
+              <p><strong>Name:</strong> "{name}"</p>
+              <p><strong>Criteria:</strong> {JSON.stringify(criteria, null, 2)}</p>
+              <p><strong>ScianSectorId:</strong> {scianSectorId || "null"}</p>
+              <p><strong>Composant AIEnhancedNameInput:</strong> Chargement en cours...</p>
+            </div>
+          </div>
+
           <AIEnhancedNameInput 
             name={name} 
             setName={setName}

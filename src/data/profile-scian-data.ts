@@ -1,19 +1,3 @@
-Parfait ! Vous avez créé le fichier pour les données statiques.
-
-## Étape 20 : Implémenter le fichier de données statiques
-
-Ouvrons maintenant le fichier dans VS Code pour y ajouter les données statiques :
-
-```bash
-code src\data\profile-scian-data.ts
-```
-
-Cette commande ouvre le fichier dans VS Code.
-
-Une fois le fichier ouvert, ajoutez-y le contenu suivant :
-
-```typescript
-// Secteurs SCIAN
 export const scianSectors = [
   { code: '11', name: 'Agriculture, foresterie, pêche et chasse' },
   { code: '21', name: 'Extraction minière, exploitation en carrière, et extraction de pétrole et de gaz' },
@@ -37,7 +21,6 @@ export const scianSectors = [
   { code: '91', name: 'Administrations publiques' }
 ];
 
-// Tailles d'entreprise
 export const companySizes = [
   'Micro-entreprise (1-4 employés)',
   'Petite entreprise (5-49 employés)',
@@ -45,7 +28,6 @@ export const companySizes = [
   'Grande entreprise (250+ employés)'
 ];
 
-// Niveaux de risque
 export const riskLevels = [
   'Faible',
   'Modéré',
@@ -53,7 +35,6 @@ export const riskLevels = [
   'Très élevé'
 ];
 
-// Cadres de conformité
 export const complianceFrameworks = [
   'CNESST (Quebec)',
   'RSST (Règlement sur la santé et la sécurité du travail)',
@@ -66,7 +47,6 @@ export const complianceFrameworks = [
   'Autre'
 ];
 
-// Types de systèmes SST
 export const sstSystemTypes = [
   'ISO 45001:2018 - Systèmes de management de la santé et de la sécurité au travail',
   'CSA Z1000-14 - Gestion de la santé et sécurité au travail',
@@ -84,7 +64,6 @@ export const sstSystemTypes = [
   'Pas de système formalisé'
 ];
 
-// Certifications SST
 export const sstCertifications = [
   'ISO 45001:2018 - Certification internationale',
   'CSA Z1000-14 - Certification canadienne',
@@ -96,7 +75,6 @@ export const sstCertifications = [
   'Aucune certification formelle'
 ];
 
-// Composantes des systèmes SST par type
 export const sstSystemComponents = {
   'ISO 45001': [
     '4. Contexte de l\'organisme',
@@ -146,25 +124,6 @@ export const sstSystemComponents = {
   ]
 };
 
-// Méthodologies SST
-export const sstMethodologies = [
-  'Méthode Kinney - Évaluation quantitative des risques',
-  'HAZOP - Hazard and Operability Study',
-  'FMEA/AMDEC - Analyse des modes de défaillance',
-  'What-If Analysis - Analyse des scénarios',
-  'Job Safety Analysis (JSA)',
-  'Bow-Tie Analysis - Analyse nœud papillon',
-  'LOPA - Layer of Protection Analysis',
-  'Root Cause Analysis (RCA)',
-  'Fault Tree Analysis (FTA)',
-  'Event Tree Analysis (ETA)',
-  'Swiss Cheese Model',
-  '5 Pourquoi (5 Whys)',
-  'Ishikawa (Diagramme en arête de poisson)',
-  'STAMP - Systems-Theoretic Accident Model'
-];
-
-// Types d'organisation du travail
 export const workOrganizationTypes = [
   'Organisation traditionnelle hiérarchique',
   'Organisation matricielle',
@@ -174,7 +133,6 @@ export const workOrganizationTypes = [
   'Organisation en réseau'
 ];
 
-// Horaires de travail
 export const shiftPatterns = [
   'Horaire régulier de jour',
   'Horaire de soir',
@@ -186,7 +144,6 @@ export const shiftPatterns = [
   'Travail sur appel'
 ];
 
-// Niveaux de sous-traitance
 export const subcontractingLevels = [
   'Aucune sous-traitance',
   'Sous-traitance occasionnelle (<25%)',
@@ -194,7 +151,6 @@ export const subcontractingLevels = [
   'Sous-traitance importante (>50%)'
 ];
 
-// Niveaux de stabilité de la main-d'œuvre
 export const workforceStabilityLevels = [
   'Très stable (turnover <5%)',
   'Stable (turnover 5-15%)',
@@ -202,7 +158,6 @@ export const workforceStabilityLevels = [
   'Instable (turnover >25%)'
 ];
 
-// Options de climat de sécurité
 export const safetyClimateOptions = [
   'Culture de sécurité exemplaire',
   'Culture de sécurité développée',
@@ -210,7 +165,6 @@ export const safetyClimateOptions = [
   'Culture de sécurité déficiente'
 ];
 
-// Méthodes de communication
 export const communicationMethods = [
   'Réunions SST régulières',
   'Affichage physique',
@@ -222,7 +176,6 @@ export const communicationMethods = [
   'Communication par équipe'
 ];
 
-// Processus de prise de décision
 export const decisionMakingProcesses = [
   'Décision centralisée',
   'Décision participative',
@@ -231,7 +184,6 @@ export const decisionMakingProcesses = [
   'Comités de décision'
 ];
 
-// Approches de gestion du changement
 export const changeManagementApproaches = [
   'Gestion formelle du changement',
   'Processus informel',
@@ -239,7 +191,6 @@ export const changeManagementApproaches = [
   'Pas de processus défini'
 ];
 
-// Risques spécifiques par secteur SCIAN
 export const sectorSpecificRisks = {
   '11': ['Accidents avec machines agricoles', 'Exposition aux pesticides', 'Chutes', 'Coupures', 'Noyade'],
   '21': ['Effondrement', 'Explosions', 'Exposition à la silice', 'Bruit intense', 'Émanations toxiques'],
@@ -252,6 +203,3 @@ export const sectorSpecificRisks = {
   '62': ['Exposition aux agents biologiques', 'Violence au travail', 'Troubles musculosquelettiques'],
   '72': ['Brûlures', 'Coupures', 'Troubles musculosquelettiques', 'Exposition à agents biologiques']
 };
-```
-
-Copiez ce code dans le fichier, enregistrez-le, puis revenez au terminal.

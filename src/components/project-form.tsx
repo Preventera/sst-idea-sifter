@@ -1,275 +1,281 @@
-import React, { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
+// src/components/project-form.tsx
+
+import React, { useState, useEffect } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Slider } from "@/components/ui/slider";
-import CriteriaSlider from "./criteria-slider";
-import AIEnhancedNameInput from "./project-form/ai-enhanced-name-input";
-import { Project, Criteria } from "../types/project";
-import { AlertCircle } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { SCIAN_SECTORS } from "../data/scian-sectors";
+import { Project } from "../types/project";
 
 interface ProjectFormProps {
   onAddProject: (project: Project) => void;
   editingProject: Project | null;
-  onUpdateProject: (project: Project) => void;
+  onUpdateProject: (p: Project) => void;
   onCancelEdit: () => void;
 }
 
-const initialCriteria: Criteria = {
-  impact: 5,
-  excellence: 5,
-  faisabilite: 5,
-  gouvernance: 5,
-  securite: 5,
-  acceptabilite: 5,
-  perennite: 5
-};
+const ProjectForm: React.FC<ProjectFormProps> = ({
+  onAddProject,
+  editingProject,
+  onUpdateProject,
+  onCancelEdit,
+}) => {
+  // États pour les champs du formulaire
+  const [name, setName] = useState<string>(editingProject?.name ?? "");
+  const [scores, setScores] = useState<{
+    impact: number;
+    excellence: number;
+    faisabilite: number;
+    gouvernance: number;
+    securite: number;
+    acceptabilite: number;
+    perennite: number;
+  }>(
+    editingProject?.scores ?? {
+      impact: 5,
+      excellence: 5,
+      faisabilite: 5,
+      gouvernance: 5,
+      securite: 5,
+      acceptabilite: 5,
+      perennite: 5,
+    }
+  );
+  const [scianSectorId, setScianSectorId] = useState<string>(
+    editingProject?.scianSectorId ?? ""
+  );
 
-const criteriaDescriptions = {
-  impact: "Évalue l'adéquation du projet avec les enjeux prioritaires de SST et son potentiel d'impact mesurable sur la sécurité des travailleurs et la réduction des risques professionnels.",
-  excellence: "Mesure la qualité scientifique et technique de la solution proposée, incluant le niveau d'innovation et sa capacité à dépasser les approches traditionnelles.",
-  faisabilite: "Évalue le réalisme du calendrier, du budget, la disponibilité des données d'entraînement pertinentes et la capacité à intégrer la solution dans les environnements de travail existants.",
-  gouvernance: "Vérifie le respect des principes éthiques (transparence, équité, absence de biais), l'alignement avec les cadres réglementaires et l'implication d'un comité interdisciplinaire.",
-  securite: "Évalue la gestion des risques spécifiques liés à l'IA générative, la mise en place de mécanismes de contrôle et la capacité à garantir la fiabilité et la sécurité des utilisateurs.",
-  acceptabilite: "Mesure l'acceptabilité sociale et organisationnelle des usages proposés et la clarté sur la valeur ajoutée pour toutes les parties prenantes.",
-  perennite: "Évalue la stratégie d'exploitation des résultats, de diffusion et la pérennité de la solution (maintenance, évolutivité, adaptation aux évolutions)."
-};
-
-const ProjectForm = ({ onAddProject, editingProject, onUpdateProject, onCancelEdit }: ProjectFormProps) => {
-  const { toast } = useToast();
-  const [name, setName] = useState(editingProject?.name || "");
-  const [criteria, setCriteria] = useState<Criteria>(editingProject?.criteria || initialCriteria);
-  const [weights, setWeights] = useState({
-    impact: 1,
-    excellence: 1,
-    faisabilite: 1,
-    gouvernance: 1,
-    securite: 1,
-    acceptabilite: 1,
-    perennite: 1
-  });
-  const [useWeights, setUseWeights] = useState(false);
-  const [criteriaModified, setCriteriaModified] = useState(false);
+  // Si on entre en mode édition, on préremplit les champs
+  useEffect(() => {
+    if (editingProject) {
+      setName(editingProject.name);
+      setScores(editingProject.scores);
+      setScianSectorId(editingProject.scianSectorId ?? "");
+    }
+  }, [editingProject]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) {
-      toast({
-        title: "Champ requis",
-        description: "Veuillez saisir le nom du projet.",
-        variant: "destructive"
-      });
-      return;
-    }
 
-    if (!criteriaModified) {
-      toast({
-        title: "Attention",
-        description: "Vous n'avez pas modifié les critères d'évaluation. Les valeurs par défaut (5/10) seront utilisées.",
-      });
-    }
+    // Calculer le score moyen à partir des critères
+    const sumScores =
+      scores.impact +
+      scores.excellence +
+      scores.faisabilite +
+      scores.gouvernance +
+      scores.securite +
+      scores.acceptabilite +
+      scores.perennite;
+    const averageScore = Math.round((sumScores / 7) * 100) / 100;
 
-    let score: number;
-    
-    if (useWeights) {
-      const totalWeight = Object.values(weights).reduce((sum, weight) => sum + weight, 0);
-      score = Object.entries(criteria).reduce(
-        (sum, [key, value]) => sum + value * weights[key as keyof typeof weights], 
-        0
-      ) / totalWeight;
-    } else {
-      score = Object.values(criteria).reduce((sum, value) => sum + value, 0) / Object.values(criteria).length;
-    }
-    
-    score = Math.round(score * 100) / 100; // Arrondir à 2 décimales
-    
-    const project: Project = {
-      id: editingProject?.id || Date.now().toString(),
-      name,
-      criteria,
-      score
+    const newProject: Project = {
+      id: editingProject ? editingProject.id : Date.now().toString(),
+      name: name.trim(),
+      ideas: editingProject?.ideas ?? [],
+      scores,
+      score: averageScore,
+      scianSectorId: scianSectorId || null,
+      priority: editingProject?.priority ?? null,
+      created_at: editingProject?.created_at ?? new Date(),
+      updated_at: new Date(),
     };
 
     if (editingProject) {
-      onUpdateProject(project);
-      toast({
-        title: "Projet mis à jour",
-        description: `Le projet "${name}" a été modifié avec succès.`
-      });
+      onUpdateProject(newProject);
     } else {
-      onAddProject(project);
+      onAddProject(newProject);
+    }
+
+    // Réinitialiser le formulaire si on créait un nouveau projet
+    if (!editingProject) {
       setName("");
-      setCriteria(initialCriteria);
-      setCriteriaModified(false);
-      toast({
-        title: "Projet ajouté",
-        description: `Le projet "${name}" a été ajouté avec succès.`
+      setScores({
+        impact: 5,
+        excellence: 5,
+        faisabilite: 5,
+        gouvernance: 5,
+        securite: 5,
+        acceptabilite: 5,
+        perennite: 5,
       });
+      setScianSectorId("");
+    } else {
+      // En cas d’édition, annuler le mode édition
+      onCancelEdit();
     }
   };
 
-  const updateCriteria = (key: keyof Criteria, value: number) => {
-    setCriteria(prev => ({ ...prev, [key]: value }));
-    setCriteriaModified(true);
-  };
-
-  const updateWeight = (key: string, value: number) => {
-    setWeights(prev => ({ ...prev, [key]: value }));
-  };
-
   return (
-    <form onSubmit={handleSubmit}>
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>{editingProject ? "Modifier le projet" : "Nouveau projet IA-SST"}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <AIEnhancedNameInput
-            name={name}
-            setName={setName}
-            criteria={criteria}
+    <form onSubmit={handleSubmit} className="space-y-4 border rounded-lg p-6">
+      {/* Nom / Description du projet */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Nom / Description</label>
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Ex : Caméra pour détecter le non-port des EPI"
+          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+        />
+      </div>
+
+      {/* Sélecteur de secteur SCIAN */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700">
+          Secteur SCIAN (optionnel)
+        </label>
+        <Select value={scianSectorId} onValueChange={(val) => setScianSectorId(val)}>
+          <SelectTrigger className="mt-1 w-full">
+            <SelectValue placeholder="Choisissez un secteur …" />
+          </SelectTrigger>
+          <SelectContent>
+            {SCIAN_SECTORS.map((s) => (
+              <SelectItem key={s.id} value={s.id}>
+                {s.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Sliders pour chacun des 7 critères */}
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Impact et pertinence en SST : {scores.impact}
+          </label>
+          <input
+            type="range"
+            min={0}
+            max={10}
+            value={scores.impact}
+            onChange={(e) =>
+              setScores((prev) => ({ ...prev, impact: Number(e.target.value) }))
+            }
+            className="w-full"
           />
+        </div>
 
-          <Alert className="mb-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Ajustez les valeurs ci-dessous pour évaluer votre projet. Par défaut, tous les critères sont à 5/10.
-            </AlertDescription>
-          </Alert>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Excellence scientifique : {scores.excellence}
+          </label>
+          <input
+            type="range"
+            min={0}
+            max={10}
+            value={scores.excellence}
+            onChange={(e) =>
+              setScores((prev) => ({ ...prev, excellence: Number(e.target.value) }))
+            }
+            className="w-full"
+          />
+        </div>
 
-          <div className="mb-6">
-            <Tabs defaultValue="standard">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="font-semibold text-lg">Critères d'évaluation</h3>
-                <TabsList>
-                  <TabsTrigger value="standard" onClick={() => setUseWeights(false)}>Standard</TabsTrigger>
-                  <TabsTrigger value="pondere" onClick={() => setUseWeights(true)}>Pondéré</TabsTrigger>
-                </TabsList>
-              </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Faisabilité et maturité : {scores.faisabilite}
+          </label>
+          <input
+            type="range"
+            min={0}
+            max={10}
+            value={scores.faisabilite}
+            onChange={(e) =>
+              setScores((prev) => ({ ...prev, faisabilite: Number(e.target.value) }))
+            }
+            className="w-full"
+          />
+        </div>
 
-              <TabsContent value="standard">
-                <div className="space-y-2">
-                  <CriteriaSlider
-                    label="Impact et pertinence en SST"
-                    description={criteriaDescriptions.impact}
-                    value={criteria.impact}
-                    onChange={(value) => updateCriteria("impact", value)}
-                    colorClass="bg-sst-blue"
-                  />
-                  <CriteriaSlider
-                    label="Excellence scientifique et innovation"
-                    description={criteriaDescriptions.excellence}
-                    value={criteria.excellence}
-                    onChange={(value) => updateCriteria("excellence", value)}
-                    colorClass="bg-sst-blue"
-                  />
-                  <CriteriaSlider
-                    label="Faisabilité et maturité du projet"
-                    description={criteriaDescriptions.faisabilite}
-                    value={criteria.faisabilite}
-                    onChange={(value) => updateCriteria("faisabilite", value)}
-                    colorClass="bg-sst-blue"
-                  />
-                  <CriteriaSlider
-                    label="Gouvernance, éthique et conformité"
-                    description={criteriaDescriptions.gouvernance}
-                    value={criteria.gouvernance}
-                    onChange={(value) => updateCriteria("gouvernance", value)}
-                    colorClass="bg-sst-dark-blue"
-                  />
-                  <CriteriaSlider
-                    label="Sécurité, robustesse et gestion des risques"
-                    description={criteriaDescriptions.securite}
-                    value={criteria.securite}
-                    onChange={(value) => updateCriteria("securite", value)}
-                    colorClass="bg-sst-dark-blue"
-                  />
-                  <CriteriaSlider
-                    label="Acceptabilité et valeur pour les parties prenantes"
-                    description={criteriaDescriptions.acceptabilite}
-                    value={criteria.acceptabilite}
-                    onChange={(value) => updateCriteria("acceptabilite", value)}
-                    colorClass="bg-sst-dark-blue"
-                  />
-                  <CriteriaSlider
-                    label="Exploitation, diffusion et pérennité"
-                    description={criteriaDescriptions.perennite}
-                    value={criteria.perennite}
-                    onChange={(value) => updateCriteria("perennite", value)}
-                    colorClass="bg-sst-dark-blue"
-                  />
-                </div>
-              </TabsContent>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Gouvernance & éthique : {scores.gouvernance}
+          </label>
+          <input
+            type="range"
+            min={0}
+            max={10}
+            value={scores.gouvernance}
+            onChange={(e) =>
+              setScores((prev) => ({ ...prev, gouvernance: Number(e.target.value) }))
+            }
+            className="w-full"
+          />
+        </div>
 
-              <TabsContent value="pondere">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {Object.entries(criteria).map(([key, value]) => {
-                    const keyTyped = key as keyof Criteria;
-                    const label = {
-                      impact: "Impact et pertinence",
-                      excellence: "Excellence et innovation",
-                      faisabilite: "Faisabilité et maturité",
-                      gouvernance: "Gouvernance et éthique",
-                      securite: "Sécurité et robustesse",
-                      acceptabilite: "Acceptabilité terrain",
-                      perennite: "Pérennité et diffusion"
-                    }[keyTyped];
-                    
-                    return (
-                      <div key={key} className="border rounded-lg p-4">
-                        <div className="flex justify-between mb-2">
-                          <span className="font-medium">{label}</span>
-                          <span className="font-bold">{value}/10</span>
-                        </div>
-                        <Slider
-                          value={[value]}
-                          min={1}
-                          max={10}
-                          step={1}
-                          className="mb-3"
-                          onValueChange={(values) => updateCriteria(keyTyped, values[0])}
-                        />
-                        
-                        <div className="flex justify-between items-center mt-4">
-                          <span className="text-sm text-gray-500">Pondération:</span>
-                          <div className="flex items-center gap-2">
-                            {[1, 2, 3].map((w) => (
-                              <button
-                                key={w}
-                                type="button"
-                                className={`w-8 h-8 rounded-full text-sm ${
-                                  weights[keyTyped] === w
-                                    ? "bg-sst-blue text-white"
-                                    : "bg-gray-100 text-gray-700"
-                                }`}
-                                onClick={() => updateWeight(key, w)}
-                              >
-                                {w}x
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </TabsContent>
-            </Tabs>
-          </div>
-        </CardContent>
-        <CardFooter className="flex justify-end space-x-2">
-          {editingProject && (
-            <Button variant="outline" onClick={onCancelEdit}>
-              Annuler
-            </Button>
-          )}
-          <Button type="submit">
-            {editingProject ? "Mettre à jour" : "Ajouter le projet"}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Sécurité & risques : {scores.securite}
+          </label>
+          <input
+            type="range"
+            min={0}
+            max={10}
+            value={scores.securite}
+            onChange={(e) =>
+              setScores((prev) => ({ ...prev, securite: Number(e.target.value) }))
+            }
+            className="w-full"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Acceptabilité : {scores.acceptabilite}
+          </label>
+          <input
+            type="range"
+            min={0}
+            max={10}
+            value={scores.acceptabilite}
+            onChange={(e) =>
+              setScores((prev) => ({ ...prev, acceptabilite: Number(e.target.value) }))
+            }
+            className="w-full"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Pérennité : {scores.perennite}
+          </label>
+          <input
+            type="range"
+            min={0}
+            max={10}
+            value={scores.perennite}
+            onChange={(e) =>
+              setScores((prev) => ({ ...prev, perennite: Number(e.target.value) }))
+            }
+            className="w-full"
+          />
+        </div>
+      </div>
+
+      {/* Boutons d’ajout / mise à jour ou annulation */}
+      <div className="pt-4">
+        <Button type="submit">
+          {editingProject ? "Mettre à jour le projet" : "Ajouter le projet"}
+        </Button>
+        {editingProject && (
+          <Button
+            variant="outline"
+            className="ml-2"
+            onClick={(e) => {
+              e.preventDefault();
+              onCancelEdit();
+            }}
+          >
+            Annuler
           </Button>
-        </CardFooter>
-      </Card>
+        )}
+      </div>
     </form>
   );
 };

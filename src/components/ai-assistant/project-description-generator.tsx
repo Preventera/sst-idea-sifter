@@ -18,7 +18,7 @@ interface ProjectDescriptionGeneratorProps {
 const ProjectDescriptionGenerator = ({ criteria, scianSectorId, onGenerate }: ProjectDescriptionGeneratorProps) => {
   const [showGenerator, setShowGenerator] = useState(false);
   const [generatedDescriptions, setGeneratedDescriptions] = useState<string[]>([]);
-  const [selectedLLM, setSelectedLLM] = useState<LLMProvider>('openai');
+  const [selectedLLM, setSelectedLLM] = useState<LLMProvider>('claude');
   const { generateContent, analyzeContent, isLoading } = useAIAssistant();
 
   const generateDescriptions = async () => {
