@@ -203,3 +203,22 @@ export const sectorSpecificRisks = {
   '62': ['Exposition aux agents biologiques', 'Violence au travail', 'Troubles musculosquelettiques'],
   '72': ['Brûlures', 'Coupures', 'Troubles musculosquelettiques', 'Exposition à agents biologiques']
 };
+// Ajoutez cette export à la fin du fichier src/data/profile-scian-data.ts
+
+export const sstMethodologies = [
+  'Méthode Kinney - Évaluation quantitative des risques',
+  'HAZOP - Hazard and Operability Study',
+  'FMEA - Failure Mode and Effects Analysis',
+  'LOPA - Layer of Protection Analysis',
+  'QRA - Quantitative Risk Assessment',
+  'JSA - Job Safety Analysis',
+  'STOP - Sécurité au Travail par l\'Observation Préventive',
+  'BBS - Behaviour Based Safety',
+  'ICAM - Incident Cause Analysis Method',
+  'TRA - Task Risk Assessment',
+  'HIRA - Hazard Identification and Risk Assessment',
+  'SWIFT - Structured What-If Technique',
+  'ETA - Event Tree Analysis',
+  'FTA - Fault Tree Analysis',
+  'BOWTIE - Analyse Nœud Papillon'
+];

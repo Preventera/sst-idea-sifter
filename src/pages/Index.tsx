@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { Project } from "@/types/project";
-import ProjectForm from "@/components/project-form";
+import { ProjectForm } from "@/components/project-form";
 import ProjectList from "@/components/project-list";
 import ExportButton from "@/components/export-button";
 import EnhancedExportButton from "@/components/enhanced-export-button";

@@ -1,12 +1,12 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
-import ProfileScian from "./pages/ProfileScian";
+import ProfileScianRefactored from "./pages/ProfileScianRefactored";
 import NotFound from "./pages/NotFound";
+import TestAI from "./pages/TestAI";
 
 const queryClient = new QueryClient();
 
@@ -18,7 +18,8 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/profile-scian" element={<ProfileScian />} />
+          <Route path="/profile-scian" element={<ProfileScianRefactored />} />
+          <Route path="/test-ai" element={<TestAI />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

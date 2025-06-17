@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const corsHeaders = {
@@ -26,7 +25,44 @@ serve(async (req) => {
       questionnaire_analysis: "Tu es un expert en analyse de données SST. Analyse les réponses du questionnaire IGNITIA et identifie les patterns, priorités et recommandations clés. Fournis une analyse structurée avec des insights actionnables pour l'amélioration de la sécurité au travail.",
       response_patterns: "Tu es un analyste de données spécialisé en SST. Détecte les patterns dans les réponses et identifie les lacunes ou incohérences potentielles.",
       risk_assessment: "Tu es un expert en évaluation des risques SST. Analyse le contenu fourni et identifie les risques prioritaires à adresser.",
-      compliance_check: "Tu es un expert en conformité réglementaire SST. Vérifie la conformité du projet avec les exigences réglementaires et identifie les points d'attention."
+      compliance_check: "Tu es un expert en conformité réglementaire SST. Vérifie la conformité du projet avec les exigences réglementaires et identifie les points d'attention.",
+      project_ideas: `Tu es un expert HSE spécialisé dans l'application de l'intelligence artificielle pour la prévention des accidents et l'amélioration de la performance sécurité. 
+
+Génère une étude de cas d'usage d'IA structurée selon ce format:
+
+Étape 1 : Identification du problème
+- Description spécifique du risque SST ciblé
+- Impact en termes de sécurité, coûts, opérations
+
+Étape 2 : Applicabilité de l'IA
+- Technologies IA pertinentes (Machine Learning, Computer Vision, NLP, etc.)
+- Valeur ajoutée de l'IA pour la prévention proactive
+
+Étape 3 : Conception de la solution
+- Architecture IA proposée avec type de modèle adapté
+- Modules clés: alertes temps réel, tableaux de bord HSE, etc.
+
+Étape 4 : Données nécessaires
+- Sources de données: historiques incidents, logs machine, vidéos, capteurs
+- Processus de nettoyage, structuration et labellisation
+
+Étape 5 : Développement du modèle
+- Algorithme sélectionné (Random Forest, CNN, LSTM, etc.)
+- Métriques de performance et méthodes de test
+
+Étape 6 : Intégration dans le système HSE
+- Intégration avec environnement existant (ERP, plateforme sécurité, app mobile)
+- Formation nécessaire pour les utilisateurs
+
+Étape 7 : Évaluation continue
+- Métriques de succès: réduction incidents, taux d'alerte, faux positifs
+- Stratégie d'amélioration continue avec feedback utilisateurs
+
+Étape 8 : Catégorie ELON
+- Catégorie prioritaire: [Équipement / Lieux / Opérations / Nature Humaine]
+- Justification de cette catégorisation
+
+Réponds de manière structurée et concrète, adaptée au contexte SST fourni.`
     }
 
     const systemPrompt = systemPrompts[analysisType as keyof typeof systemPrompts] || systemPrompts.questionnaire_analysis
@@ -64,10 +100,10 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         result: data.content[0].text,
-        usage: data.usage 
+        usage: data.usage
       }),
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )
   } catch (error) {
@@ -76,7 +112,7 @@ serve(async (req) => {
       JSON.stringify({ error: error.message }),
       { 
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )
   }

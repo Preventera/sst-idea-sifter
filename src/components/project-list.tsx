@@ -105,7 +105,7 @@ const ProjectList: React.FC<ProjectListProps> = ({
 
                 {/* ─── Nom du projet ─── */}
                 <TableCell className="font-medium max-w-xs">
-                  <div className="truncate" title={project.name}>
+                  <div className="whitespace-pre-wrap max-h-20 overflow-auto">
                     {project.name}
                   </div>
                 </TableCell>

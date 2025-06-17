@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { supabaseClient } from '@/lib/supabaseClient'; // ✅ CORRECTION
+import { supabaseClient } from '@/lib/supabaseClient';
 
 export interface AIAssistantOptions {
   type: 'project_description' | 'project_improvement' | 'questionnaire_synthesis' | 'project_suggestions';
@@ -9,7 +9,7 @@ export interface AIAssistantOptions {
 }
 
 export interface AIAnalysisOptions {
-  analysisType: 'project_ideas' | 'questionnaire_analysis' | 'response_patterns' | 'risk_assessment' | 'compliance_check'; // ✅ Ajout de 'project_ideas'
+  analysisType: 'project_ideas' | 'questionnaire_analysis' | 'response_patterns' | 'risk_assessment' | 'compliance_check';
   text: string;
   context?: string;
 }
@@ -17,14 +17,14 @@ export interface AIAnalysisOptions {
 export const useAIAssistant = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-
+  
   const generateContent = async (options: AIAssistantOptions): Promise<string | null> => {
     setIsLoading(true);
     try {
       const { data, error } = await supabaseClient.functions.invoke('openai-assistant', {
         body: options
       });
-
+      
       if (error) throw error;
       
       return data.result;
@@ -40,14 +40,14 @@ export const useAIAssistant = () => {
       setIsLoading(false);
     }
   };
-
+  
   const analyzeContent = async (options: AIAnalysisOptions): Promise<string | null> => {
     setIsLoading(true);
     try {
       const { data, error } = await supabaseClient.functions.invoke('claude-analyzer', {
         body: options
       });
-
+      
       if (error) throw error;
       
       return data.result;
@@ -63,7 +63,7 @@ export const useAIAssistant = () => {
       setIsLoading(false);
     }
   };
-
+  
   return {
     generateContent,
     analyzeContent,
