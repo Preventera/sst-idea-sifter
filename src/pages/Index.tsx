@@ -1,4 +1,5 @@
 // src/pages/Index.tsx
+// Version avec navigation vers ProjectForm et synchronisation complète
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
@@ -25,7 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { X, TrendingUp, Users, BarChart3, FileQuestion } from "lucide-react";
+import { X, TrendingUp, Users, BarChart3, FileQuestion, Plus, Edit3 } from "lucide-react";
 import { calculateDetailedPriority, SCIAN_SECTORS } from "@/data/scian-sectors";
 import { supabaseClient } from "../lib/supabaseClient";
 
@@ -49,71 +50,97 @@ const Index: React.FC = () => {
   // ─── FONCTION DE RÉCUPÉRATION DES PROJETS DEPUIS SUPABASE ───────────────────────
   //
   const fetchProjectsFromSupabase = async () => {
-    const { data, error } = await supabaseClient
-      .from("projects")
-      .select("*")
-      .order("created_at", { ascending: false });
+    try {
+      console.log('🔄 Chargement des projets depuis Supabase...');
+      
+      const { data, error } = await supabaseClient
+        .from("projects")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error("Erreur de récupération des projets Supabase :", error);
-      return;
+      if (error) {
+        console.error("❌ Erreur de récupération des projets Supabase :", error);
+        return;
+      }
+      
+      if (!data) {
+        console.log('📭 Aucun projet trouvé');
+        return;
+      }
+
+      console.log(`✅ ${data.length} projets récupérés depuis Supabase`);
+
+      const projectsFromDB: Project[] = data.map((row: any) => {
+        // ✅ CORRECTION: Gérer le cas où row.scores est null
+        const safeScores = row.scores ?? {
+          impact: 5,
+          excellence: 5,
+          faisabilite: 5,
+          gouvernance: 5,
+          securite: 5,
+          acceptabilite: 5,
+          perennite: 5,
+        };
+
+        const crit = safeScores as {
+          impact: number;
+          excellence: number;
+          faisabilite: number;
+          gouvernance: number;
+          securite: number;
+          acceptabilite: number;
+          perennite: number;
+        };
+
+        const sommeCritères =
+          crit.impact +
+          crit.excellence +
+          crit.faisabilite +
+          crit.gouvernance +
+          crit.securite +
+          crit.acceptabilite +
+          crit.perennite;
+        const computedScore = Math.round((sommeCritères / 7) * 100) / 100;
+
+        return {
+          id: row.id,
+          name: row.title,
+          ideas: row.ideas ?? [],
+          scores: crit,
+          score: computedScore,
+          scianSectorId: row.scianSectorId ?? null,
+          priority: row.priority ?? null,
+          created_at: row.created_at ?? undefined,
+          updated_at: row.updated_at ?? undefined,
+        };
+      });
+
+      setProjects(projectsFromDB);
+    } catch (error) {
+      console.error('❌ Erreur lors du chargement:', error);
+      toast({
+        title: "Erreur de chargement",
+        description: "Impossible de charger les projets depuis la base de données.",
+        variant: "destructive"
+      });
     }
-    if (!data) return;
-
-    const projectsFromDB: Project[] = data.map((row: any) => {
-      // ✅ CORRECTION: Gérer le cas où row.scores est null
-      const safeScores = row.scores ?? {
-        impact: 5,
-        excellence: 5,
-        faisabilite: 5,
-        gouvernance: 5,
-        securite: 5,
-        acceptabilite: 5,
-        perennite: 5,
-      };
-
-      const crit = safeScores as {
-        impact: number;
-        excellence: number;
-        faisabilite: number;
-        gouvernance: number;
-        securite: number;
-        acceptabilite: number;
-        perennite: number;
-      };
-
-      const sommeCritères =
-        crit.impact +
-        crit.excellence +
-        crit.faisabilite +
-        crit.gouvernance +
-        crit.securite +
-        crit.acceptabilite +
-        crit.perennite;
-      const computedScore = Math.round((sommeCritères / 7) * 100) / 100;
-
-      return {
-        id: row.id,
-        name: row.title,
-        ideas: row.ideas ?? [],
-        scores: crit,
-        score: computedScore,
-        scianSectorId: row.scianSectorId ?? null,
-        priority: row.priority ?? null,
-        created_at: row.created_at ?? undefined,
-        updated_at: row.updated_at ?? undefined,
-      };
-    });
-
-    setProjects(projectsFromDB);
   };
 
   //
-  // ─── ON CHARGE LES PROJETS AU MONTAGE ──────────────────────────────────────────
+  // ─── ON CHARGE LES PROJETS AU MONTAGE + ACTUALISATION ──────────────────────────
   //
   useEffect(() => {
     fetchProjectsFromSupabase();
   }, []); // [] = exécute une seule fois au montage
+
+  // 🔄 ACTUALISATION AUTOMATIQUE (optionnel)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchProjectsFromSupabase();
+    }, 30000); // Actualise toutes les 30 secondes
+
+    return () => clearInterval(interval);
+  }, []);
 
   //
   // ─── FONCTION D'INSERTION DANS SUPABASE ──────────────────────────────────────────
@@ -157,6 +184,11 @@ const Index: React.FC = () => {
 
     // 2) Mise à jour du state local (pour affichage instantané)
     setProjects((prev) => [...prev, project]);
+    
+    // 3) Actualiser depuis la base pour synchroniser
+    setTimeout(() => {
+      fetchProjectsFromSupabase();
+    }, 1000);
   };
 
   const handleUpdateProject = (updatedProject: Project) => {
@@ -171,12 +203,64 @@ const Index: React.FC = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleDeleteProject = (id: string) => {
-    setProjects((prev) => prev.filter((p) => p.id !== id));
+  const handleDeleteProject = async (id: string) => {
+    try {
+      // Supprimer de Supabase
+      const { error } = await supabaseClient
+        .from('projects')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Supprimer localement
+      setProjects((prev) => prev.filter((p) => p.id !== id));
+      
+      toast({
+        title: "Projet supprimé",
+        description: "Le projet a été supprimé avec succès."
+      });
+    } catch (error) {
+      console.error('Erreur suppression:', error);
+      toast({
+        title: "Erreur de suppression",
+        description: "Impossible de supprimer le projet.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleClearAllProjects = () => {
-    setProjects([]);
+  const handleClearAllProjects = async () => {
+    try {
+      // Supprimer tous les projets de Supabase
+      const { error } = await supabaseClient
+        .from('projects')
+        .delete()
+        .neq('id', ''); // Supprime tous les enregistrements
+
+      if (error) throw error;
+
+      setProjects([]);
+      
+      toast({
+        title: "Tous les projets supprimés",
+        description: "Tous vos projets ont été supprimés avec succès."
+      });
+    } catch (error) {
+      console.error('Erreur suppression totale:', error);
+      toast({
+        title: "Erreur de suppression",
+        description: "Impossible de supprimer tous les projets.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  //
+  // ─── NAVIGATION VERS NOUVEAU PROJET ──────────────────────────────────────────────
+  //
+  const handleNewProject = () => {
+    navigate('/project/new');
   };
 
   //
@@ -322,7 +406,7 @@ const Index: React.FC = () => {
                     <span className="text-xs font-medium">SCORE MOYEN</span>
                   </div>
                   <div className="text-xl font-bold text-purple-700">
-                    {stats.avgScore}/10
+                    {stats.avgScore !== null ? `${stats.avgScore}/10` : 'NaN/10'}
                   </div>
                 </div>
               </div>
@@ -334,31 +418,53 @@ const Index: React.FC = () => {
       {/* CORPS DE PAGE PRINCIPAL */}
       <main className="container py-8">
         <div className="grid gap-8">
+          {/* 🆕 SECTION ACTIONS PRINCIPALES */}
+          <div className="grid gap-4">
+            {/* Boutons d'action principaux */}
+            <div className="flex flex-wrap gap-3 mb-4">
+              <Button
+                onClick={handleNewProject}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                size="lg"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                🚀 Nouveau projet IA-SST
+              </Button>
+              
+              <Button
+                variant="outline"
+                onClick={() => setShowQuestionnaire(true)}
+                size="lg"
+              >
+                <FileQuestion className="h-4 w-4 mr-2" />
+                📋 Questionnaire de cadrage
+              </Button>
+              
+              <Button
+                variant="outline"
+                onClick={() => setShowTemplates(true)}
+                size="lg"
+              >
+                🎯 Utiliser un modèle
+              </Button>
+            </div>
+
+            {/* Badge informatif */}
+            <div className="flex gap-2">
+              <Badge variant="outline" className="text-xs bg-green-50 text-green-700">
+                ✅ Auto-évaluation IA fonctionnelle
+              </Badge>
+              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                🔄 Synchronisation Supabase active
+              </Badge>
+              <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700">
+                🎯 Interface complète disponible
+              </Badge>
+            </div>
+          </div>
+
           {/* SECTION FORMULAIRE & TEMPLATES */}
           <div>
-            {!showTemplates && (
-              <div className="mb-4 flex flex-wrap gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowQuestionnaire(true)}
-                  className="mr-2"
-                >
-                  <FileQuestion className="h-4 w-4 mr-2" />
-                  📋 Questionnaire de cadrage IGNITIA
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setShowTemplates(true)}
-                  className="mr-2"
-                >
-                  🚀 Utiliser un modèle
-                </Button>
-                <Badge variant="outline" className="text-xs">
-                  Nouveau ! Templates et questionnaire structuré IGNITIA
-                </Badge>
-              </div>
-            )}
-
             {showTemplates && (
               <div>
                 <div className="flex justify-between items-center mb-4">
@@ -394,13 +500,21 @@ const Index: React.FC = () => {
               </div>
             )}
 
-            {/* Formulaire d'ajout / édition de projet */}
-            <ProjectForm
-              onAddProject={handleAddProject}
-              editingProject={editingProject}
-              onUpdateProject={handleUpdateProject}
-              onCancelEdit={() => setEditingProject(null)}
-            />
+            {/* Formulaire d'ajout / édition de projet (intégré mais masqué par défaut) */}
+            {editingProject && (
+              <div className="mb-8 p-6 bg-white rounded-lg border">
+                <div className="flex items-center gap-2 mb-4">
+                  <Edit3 className="h-5 w-5 text-blue-600" />
+                  <h2 className="text-lg font-semibold">Modifier le projet</h2>
+                </div>
+                <ProjectForm
+                  onAddProject={handleAddProject}
+                  editingProject={editingProject}
+                  onUpdateProject={handleUpdateProject}
+                  onCancelEdit={() => setEditingProject(null)}
+                />
+              </div>
+            )}
           </div>
 
           {/* SECTION LISTE ET FILTRES */}
@@ -431,7 +545,8 @@ const Index: React.FC = () => {
                         <AlertDialogTitle>Effacer tous les projets</AlertDialogTitle>
                         <AlertDialogDescription>
                           Êtes-vous sûr de vouloir supprimer tous vos projets ? Cette
-                          action est irréversible.
+                          action est irréversible et supprimera également les données
+                          de la base de données.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -471,6 +586,25 @@ const Index: React.FC = () => {
               onEdit={handleEditProject}
               onDelete={handleDeleteProject}
             />
+
+            {/* Message si aucun projet */}
+            {projects.length === 0 && (
+              <div className="text-center py-12 bg-white rounded-lg border border-dashed border-gray-300">
+                <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <Plus className="h-8 w-8 text-blue-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Aucun projet pour le moment
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Commencez par créer votre premier projet d'IA en SST
+                </p>
+                <Button onClick={handleNewProject} className="bg-blue-600 hover:bg-blue-700">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Créer mon premier projet
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </main>
@@ -491,8 +625,8 @@ const Index: React.FC = () => {
               </div>
             </div>
             <p className="text-center text-gray-500 text-sm">
-              © {new Date().getFullYear()} IGNITIA de GenAISafety – Générateur
-              interactif de priorisation de projets IA en SST
+              © {new Date().getFullYear()} IGNITIA de GenAISafety – Système complet
+              de priorisation de projets IA en SST
             </p>
           </div>
         </div>

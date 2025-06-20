@@ -1,5 +1,6 @@
-// src/components/project-form/project-form.tsx
-// Version harmonisée avec synchronisation des données
+// src/components/project-form/project-form-xai-enhanced.tsx
+// Intégration du module XAI dans le ProjectForm existant d'IGNITIA
+// ÉTAPE 1.3c - ProjectForm avec XAI intégré
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -13,11 +14,13 @@ import { Slider } from '@/components/ui/slider';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Brain, Target, TrendingUp, Info, Lightbulb, Zap, CheckCircle, Clock } from 'lucide-react';
+import { Brain, Target, TrendingUp, Info, Lightbulb, Zap, CheckCircle, Clock, Sparkles } from 'lucide-react';
 import { performAutoScoring, type AutoScoringResult } from '@/utils/ai-auto-scoring';
 import { SCIAN_SECTORS } from '@/data/scian-sectors';
+import { XAIExplanationComponent, XAIQuickExplanation } from '@/components/ui/xai-explanation';
+import { ProjectContext, XAIExplanation } from '@/utils/xai-context-engine';
 
-// 🔧 INTERFACE HARMONISÉE POUR LA SYNCHRONISATION
+// Interface harmonisée pour ProjectData
 interface ProjectData {
   id: string;
   name: string;
@@ -34,16 +37,17 @@ interface ProjectData {
   };
   score: number;
   priority: string;
+  xaiExplanations?: Record<string, XAIExplanation>; // Nouveau : stockage des explications XAI
 }
 
-interface ProjectFormProps {
+interface ProjectFormXAIProps {
   onAddProject: (project: ProjectData) => void;
   editingProject?: any;
   onUpdateProject?: (project: ProjectData) => void;
   onCancelEdit?: () => void;
 }
 
-export const ProjectForm: React.FC<ProjectFormProps> = ({
+export const ProjectFormXAIEnhanced: React.FC<ProjectFormXAIProps> = ({
   onAddProject,
   editingProject,
   onUpdateProject,
@@ -52,7 +56,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('basic');
   
-  // 📊 ÉTAT DU FORMULAIRE HARMONISÉ
+  // État du formulaire avec support XAI
   const [formData, setFormData] = useState<ProjectData>({
     id: editingProject?.id || crypto.randomUUID(),
     name: editingProject?.name || '',
@@ -68,14 +72,16 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
       regulatoryCompliance: 5
     },
     score: 0,
-    priority: 'Moyenne'
+    priority: 'Moyenne',
+    xaiExplanations: {} // Nouveau : stockage des explications
   });
 
-  // 🤖 ÉTAT AUTO-ÉVALUATION IA
+  // État pour l'auto-évaluation et XAI
   const [isAutoScoring, setIsAutoScoring] = useState(false);
   const [autoScoringResult, setAutoScoringResult] = useState<AutoScoringResult | null>(null);
+  const [showXAIMode, setShowXAIMode] = useState(false);
 
-  // 📊 CALCUL AUTOMATIQUE DU SCORE
+  // Calcul automatique du score
   useEffect(() => {
     const criteriaValues = Object.values(formData.criteria);
     const average = criteriaValues.reduce((sum, val) => sum + val, 0) / criteriaValues.length;
@@ -88,7 +94,26 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
     setFormData(prev => ({ ...prev, score: finalScore, priority }));
   }, [formData.criteria]);
 
-  // 🤖 FONCTION D'AUTO-ÉVALUATION IA
+  // Création du contexte projet pour XAI
+  const getProjectContext = (): ProjectContext => ({
+    nom: formData.name,
+    description: formData.description,
+    secteurSCIAN: formData.sector,
+    criteresEvalues: formData.criteria,
+    risquesPrincipaux: getSecteurRisks(formData.sector),
+    donneesPilotes: []
+  });
+
+  const getSecteurRisks = (sectorId: string): string[] => {
+    const risquesBySector: Record<string, string[]> = {
+      "2381": ["Chutes de hauteur", "Accidents mortels", "Équipements défaillants"],
+      "3361": ["Troubles musculo-squelettiques", "Accidents de machines", "Exposition chimique"],
+      "6211": ["Risques biologiques", "Stress professionnel", "Erreurs médicales"]
+    };
+    return risquesBySector[sectorId] || ["Risques généraux"];
+  };
+
+  // Fonction d'auto-évaluation existante
   const handleAutoScoring = async () => {
     if (!formData.name.trim() && !formData.description.trim()) {
       toast({
@@ -101,8 +126,6 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
 
     setIsAutoScoring(true);
     try {
-      console.log('🔍 Début auto-évaluation:', { name: formData.name, description: formData.description });
-      
       const result = await performAutoScoring(
         formData.name,
         formData.description,
@@ -110,16 +133,13 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
         false
       );
       
-      console.log('✅ Résultat auto-évaluation:', result);
-      
-      // 🔄 MAPPING DES CRITÈRES - IA vers Interface
       const mappedResult: AutoScoringResult = {
         ...result,
         criteria: {
           technicalFeasibility: result.criteria.faisabilite,
           businessValue: Math.round((result.criteria.impact + result.criteria.excellence) / 2),
           riskReduction: result.criteria.impact,
-          implementationCost: 11 - result.criteria.faisabilite, // Inversé (coût vs facilité)
+          implementationCost: 11 - result.criteria.faisabilite,
           timeToMarket: result.criteria.faisabilite,
           stakeholderSupport: result.criteria.acceptabilite,
           regulatoryCompliance: result.criteria.gouvernance
@@ -127,7 +147,6 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
       };
       
       setAutoScoringResult(mappedResult);
-      console.log('🎯 Scores mappés:', mappedResult.criteria);
       
       toast({
         title: "Auto-évaluation terminée",
@@ -145,7 +164,23 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
     }
   };
 
-  // ✅ APPLIQUER LES SUGGESTIONS IA
+  // Nouvelle fonction : gérer la génération d'explication XAI
+  const handleXAIExplanation = (critere: string, explanation: XAIExplanation) => {
+    setFormData(prev => ({
+      ...prev,
+      xaiExplanations: {
+        ...prev.xaiExplanations,
+        [critere]: explanation
+      }
+    }));
+
+    toast({
+      title: "Explication XAI générée",
+      description: `Explication contextuelle créée pour ${critere}`
+    });
+  };
+
+  // Appliquer les suggestions IA
   const applySuggestedScores = () => {
     if (!autoScoringResult) return;
     
@@ -161,7 +196,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
     setAutoScoringResult(null);
   };
 
-  // ❌ IGNORER LES SUGGESTIONS
+  // Ignorer les suggestions
   const ignoreAutoScoring = () => {
     setAutoScoringResult(null);
     toast({
@@ -170,7 +205,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
     });
   };
 
-  // 📝 GESTION DES CHANGEMENTS DE FORMULAIRE
+  // Mise à jour des critères
   const updateCriteria = (key: keyof ProjectData['criteria'], value: number[]) => {
     setFormData(prev => ({
       ...prev,
@@ -178,7 +213,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
     }));
   };
 
-  // 💾 SOUMISSION DU FORMULAIRE
+  // Soumission du formulaire
   const handleSubmit = () => {
     if (!formData.name.trim()) {
       toast({
@@ -221,13 +256,14 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
           regulatoryCompliance: 5
         },
         score: 0,
-        priority: 'Moyenne'
+        priority: 'Moyenne',
+        xaiExplanations: {}
       });
       setActiveTab('basic');
     }
   };
 
-  // 🎨 COULEUR PRIORITÉ
+  // Couleur priorité
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'Élevée': return 'bg-red-100 text-red-800';
@@ -245,8 +281,23 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
             <div className="flex items-center gap-2">
               <Brain className="h-6 w-6 text-blue-600" />
               <span>{editingProject ? 'Modifier le projet' : 'Nouveau projet IA-SST'}</span>
+              {showXAIMode && (
+                <Badge className="bg-purple-100 text-purple-700">
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  Mode XAI
+                </Badge>
+              )}
             </div>
             <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowXAIMode(!showXAIMode)}
+                className={showXAIMode ? "bg-purple-50 border-purple-300" : ""}
+              >
+                <Sparkles className="h-4 w-4 mr-1" />
+                {showXAIMode ? 'Désactiver XAI' : 'Activer XAI'}
+              </Button>
               <Badge className={getPriorityColor(formData.priority)}>
                 {formData.priority}
               </Badge>
@@ -265,7 +316,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
               <TabsTrigger value="ai-assistant">Assistant IA</TabsTrigger>
             </TabsList>
 
-            {/* 📝 ONGLET INFORMATIONS DE BASE */}
+            {/* ONGLET INFORMATIONS DE BASE */}
             <TabsContent value="basic" className="space-y-4">
               <div className="space-y-4">
                 <div>
@@ -311,9 +362,9 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
               </div>
             </TabsContent>
 
-            {/* 📊 ONGLET CRITÈRES D'ÉVALUATION */}
+            {/* ONGLET CRITÈRES D'ÉVALUATION AVEC XAI */}
             <TabsContent value="criteria" className="space-y-6">
-              {/* 🤖 AUTO-ÉVALUATION IA */}
+              {/* Auto-évaluation IA */}
               <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
@@ -348,7 +399,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
                 </CardContent>
               </Card>
 
-              {/* 🎯 RÉSULTATS AUTO-ÉVALUATION */}
+              {/* Résultats auto-évaluation */}
               {autoScoringResult && (
                 <Alert className="border-green-200 bg-green-50">
                   <CheckCircle className="h-4 w-4 text-green-600" />
@@ -368,22 +419,22 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
                 </Alert>
               )}
 
-              {/* 📊 SLIDERS CRITÈRES */}
-              <div className="space-y-6">
-                <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <TrendingUp className="w-5 h-5 text-blue-600" />
-                    <span className="font-medium text-blue-900">Score total: {formData.score}/10</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                      style={{ width: `${(formData.score / 10) * 100}%` }}
-                    ></div>
-                  </div>
+              {/* Score total */}
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingUp className="w-5 h-5 text-blue-600" />
+                  <span className="font-medium text-blue-900">Score total: {formData.score}/10</span>
                 </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                    style={{ width: `${(formData.score / 10) * 100}%` }}
+                  ></div>
+                </div>
+              </div>
 
-                {/* CRITÈRES INDIVIDUELS */}
+              {/* Critères individuels avec XAI */}
+              <div className="space-y-6">
                 {Object.entries(formData.criteria).map(([key, value]) => {
                   const criteriaLabels = {
                     technicalFeasibility: 'Faisabilité technique',
@@ -409,25 +460,38 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
                   const suggestion = autoScoringResult?.criteria[suggestionKey];
 
                   return (
-                    <div key={key} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-sm font-medium">
-                          {criteriaLabels[key as keyof typeof criteriaLabels]}
-                        </Label>
-                        <div className="flex items-center gap-2">
-                          {suggestion && (
-                            <Badge variant="outline" className="bg-blue-50 text-blue-700 text-xs">
-                              IA suggère: {suggestion}
-                            </Badge>
-                          )}
-                          <span className="text-lg font-bold text-blue-600">
-                            {value}/10
-                          </span>
+                    <div key={key} className="space-y-3">
+                      {/* En-tête du critère avec XAI intégré */}
+                      {showXAIMode ? (
+                        <XAIExplanationComponent
+                          critere={key}
+                          score={value}
+                          contexteProjet={getProjectContext()}
+                          labelCritere={criteriaLabels[key as keyof typeof criteriaLabels]}
+                          onExplicationGenerate={(explanation) => handleXAIExplanation(key, explanation)}
+                        />
+                      ) : (
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-medium">
+                            {criteriaLabels[key as keyof typeof criteriaLabels]}
+                          </Label>
+                          <div className="flex items-center gap-2">
+                            {suggestion && (
+                              <Badge variant="outline" className="bg-blue-50 text-blue-700 text-xs">
+                                IA suggère: {suggestion}
+                              </Badge>
+                            )}
+                            <span className="text-lg font-bold text-blue-600">
+                              {value}/10
+                            </span>
+                          </div>
                         </div>
-                      </div>
+                      )}
+
                       <p className="text-xs text-gray-600 mb-2">
                         {descriptions[key as keyof typeof descriptions]}
                       </p>
+                      
                       <Slider
                         value={[value]}
                         onValueChange={(newValue) => updateCriteria(key as keyof ProjectData['criteria'], newValue)}
@@ -450,13 +514,19 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
               </Button>
             </TabsContent>
 
-            {/* 🤖 ONGLET ASSISTANT IA */}
+            {/* ONGLET ASSISTANT IA */}
             <TabsContent value="ai-assistant" className="space-y-4">
               <Card className="border-purple-200 bg-gradient-to-r from-purple-50 to-blue-50">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Target className="w-5 h-5 text-purple-600" />
                     <h3 className="font-medium text-purple-900">🚀 Générateur ELON Avancé</h3>
+                    {showXAIMode && (
+                      <Badge className="bg-purple-100 text-purple-700">
+                        <Sparkles className="h-3 w-3 mr-1" />
+                        XAI Activé
+                      </Badge>
+                    )}
                   </div>
                   <p className="text-sm text-purple-700 mb-4">
                     Assistant IA pour générer des idées de projets contextualisées selon votre secteur d'activité
@@ -466,6 +536,11 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
                     <AlertDescription>
                       L'algorithme ELON analyse les <strong>Équipements</strong>, <strong>Lieux</strong>, <strong>Opérations</strong> et la <strong>Nature humaine</strong> 
                       pour générer des idées de projets IA adaptées à votre secteur.
+                      {showXAIMode && (
+                        <span className="block mt-2 text-purple-700 font-medium">
+                          ✨ Mode XAI : Explications contextuelles activées
+                        </span>
+                      )}
                     </AlertDescription>
                   </Alert>
                 </CardContent>
@@ -480,7 +555,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
             </TabsContent>
           </Tabs>
 
-          {/* 🔄 BOUTONS D'ACTION */}
+          {/* Boutons d'action */}
           <div className="flex justify-between mt-6 pt-4 border-t">
             {onCancelEdit && (
               <Button variant="outline" onClick={onCancelEdit}>
