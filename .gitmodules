@@ -1,0 +1,3 @@
+[submodule "src/external/SST_CRAWLER"]
+	path = src/external/SST_CRAWLER
+	url = https://github.com/Preventera/SST_CRAWLER.git
