@@ -1,13 +1,18 @@
-// Fichier: src/components/project-form/ai-enhanced-name-input.tsx
-// Version hybride: Structure existante + Intégration ProfileScian
+// src/components/project-form/ai-enhanced-name-input.tsx
+// Version intégrée avec service d'intégration IA et données CNESST
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import AITextEnhancer from '@/components/ai-assistant/ai-text-enhancer';
 import LLMSelector, { LLMProvider } from '@/components/ai-assistant/llm-selector';
 import { useAIAssistant } from '@/hooks/use-ai-assistant';
 import { Criteria } from '@/types/project';
-import { SCIAN_SECTORS } from '@/data/scian-sectors';
+import { Loader2, Sparkles, Lightbulb, Database, TrendingUp, AlertTriangle } from 'lucide-react';
+import { aiIntegrationService } from '@/services/ai/ai-integration-service';
+import { cnesstAPIService } from '@/services/api/cnesst-api-service';
 
 interface AIEnhancedNameInputProps {
   name: string;
@@ -16,181 +21,140 @@ interface AIEnhancedNameInputProps {
   scianSectorId?: string;
 }
 
+interface SectorInsights {
+  riskLevel: 'low' | 'medium' | 'high';
+  topRisks: string[];
+  totalCases: number;
+  trendAnalysis: string;
+}
+
 const AIEnhancedNameInput = ({ name, setName, criteria, scianSectorId }: AIEnhancedNameInputProps) => {
-  const [selectedLLM, setSelectedLLM] = useState<LLMProvider>('claude');
+  const [selectedLLM, setSelectedLLM] = useState<LLMProvider>('openai');
+  const [sectorInsights, setSectorInsights] = useState<SectorInsights | null>(null);
+  const [loadingInsights, setLoadingInsights] = useState(false);
   const { generateContent, analyzeContent, isLoading } = useAIAssistant();
-  
-  console.log('AIEnhancedNameInput rendered'); // Debug log
 
-  // 🆕 NOUVELLE FONCTION: Récupérer les données contextuelles ProfileScian
-  const getContextualData = () => {
-    // Données du secteur SCIAN
-    const sectorData = SCIAN_SECTORS.find(s => s.id === scianSectorId);
+  // Chargement des insights sectoriels CNESST
+  useEffect(() => {
+    if (scianSectorId) {
+      loadSectorInsights();
+    }
+  }, [scianSectorId]);
+
+  const loadSectorInsights = async () => {
+    if (!scianSectorId) return;
     
-    // Récupérer les données du profil SCIAN depuis localStorage (si disponible)
-    const profileData = localStorage.getItem('profileScianData');
-    let parsedProfile = null;
-    
+    setLoadingInsights(true);
     try {
-      if (profileData) {
-        parsedProfile = JSON.parse(profileData);
-      }
-    } catch (error) {
-      console.warn('Erreur lors de la lecture du profil SCIAN:', error);
-    }
-
-    return {
-      sector: sectorData,
-      profile: parsedProfile
-    };
-  };
-
-  // 🆕 NOUVELLE FONCTION: Construire le contexte enrichi
-  const buildEnrichedContext = () => {
-    const { sector, profile } = getContextualData();
-    
-    let contextualInfo = "";
-
-    // Ajout du contexte sectoriel détaillé
-    if (sector) {
-      contextualInfo += `\n--- CONTEXTE SECTORIEL DÉTAILLÉ ---\n`;
-      contextualInfo += `Secteur: ${sector.name} (${sector.description})\n`;
-      contextualInfo += `Risques principaux: ${sector.statistics?.accidentCauses?.join(', ') || 'Non spécifiés'}\n`;
-      contextualInfo += `Zones de prévention: ${sector.statistics?.keyPreventionAreas?.join(', ') || 'Non spécifiées'}\n`;
-      contextualInfo += `Taux de mortalité: ${sector.statistics?.mortalityRate || 'Non disponible'}\n`;
-      contextualInfo += `Potentiel IA: ${sector.riskFactors.aiPreventivePotential}/5\n`;
-    }
-
-    // Ajout du contexte organisationnel (si profil disponible)
-    if (profile) {
-      contextualInfo += `\n--- CONTEXTE ORGANISATIONNEL ---\n`;
-      if (profile.company?.size) {
-        contextualInfo += `Taille organisation: ${profile.company.size}\n`;
-      }
-      if (profile.system?.selectedMethodologies?.length > 0) {
-        contextualInfo += `Méthodologies SST: ${profile.system.selectedMethodologies.slice(0, 3).join(', ')}\n`;
-      }
-      if (profile.company?.industry) {
-        contextualInfo += `Industrie spécifique: ${profile.company.industry}\n`;
-      }
-      if (profile.risks?.specificRisks?.length > 0) {
-        contextualInfo += `Risques identifiés: ${profile.risks.specificRisks.slice(0, 3).join(', ')}\n`;
-      }
-    }
-
-    return contextualInfo;
-  };
-  
-  const generateProjectIdeas = async () => {
-    console.log('Génération d\'idées de projet démarrée'); // Debug log
-    
-    const criteriaText = Object.entries(criteria)
-      .map(([key, value]) => `${key}: ${value}/10`)
-      .join(', ');
-    
-    // 🆕 ENRICHISSEMENT: Contexte enrichi avec ProfileScian
-    const enrichedContext = buildEnrichedContext();
-    const baseContext = scianSectorId ? `Secteur SCIAN: ${scianSectorId}` : '';
-    const fullContext = baseContext + enrichedContext;
-    
-    const prompts = [
-      `Génère une description de projet IA-SST innovant basée sur ces critères: ${criteriaText}`,
-      `Propose un projet IA-SST axé sur la prévention avec ces scores: ${criteriaText}`,
-      `Suggère un projet IA-SST pour améliorer la sécurité au travail: ${criteriaText}`
-    ];
-    
-    // Prendre le premier prompt pour une génération simple
-    const prompt = prompts[0];
-    
-    let result = null;
-    
-    try {
-      if (selectedLLM === 'openai') {
-        result = await generateContent({
-          type: 'project_description',
-          prompt,
-          context: fullContext
-        });
-      } else {
-        // 🆕 ENRICHISSEMENT: Prompt contextualisé avec données ProfileScian
-        const contextualizedPrompt = `Tu es un expert HSE spécialisé dans l'application de l'intelligence artificielle pour la prévention des accidents et l'amélioration de la performance sécurité. 
-
-${enrichedContext}
-
-Génère une étude de cas d'usage d'IA basée sur ces critères: ${criteriaText}.
-
-CONSIGNES: Adapte spécifiquement ta réponse aux risques sectoriels et au contexte organisationnel mentionnés ci-dessus.
-
-Étape 1 : Identification du problème
-- Dans le secteur ${scianSectorId || "concerné"}, le principal risque lié à ces critères concerne: [description spécifique adaptée aux risques sectoriels].
-- Ce problème entraîne [impact en termes de sécurité, coûts, opérations].
-
-Étape 2 : Applicabilité de l'IA
-- Explique comment des techniques IA peuvent résoudre ce problème spécifique.
-- Met en évidence la valeur ajoutée de l'IA pour la prévention proactive dans ce contexte.
-
-Étape 3 : Conception de la solution
-- Propose une architecture IA adaptée aux critères fournis et au secteur.
-- Détaille les modules clés: alertes en temps réel, tableaux de bord HSE, etc.
-
-Étape 4 : Données nécessaires
-- Liste les sources de données pertinentes pour ce cas d'usage sectoriel.
-- Décris le processus de préparation des données spécifiques au secteur.
-
-Étape 5 : Développement du modèle
-- Sélectionne un algorithme adapté à ce cas d'usage et aux contraintes sectorielles.
-- Décris les métriques de performance et méthodes de test appropriées.
-
-Étape 6 : Intégration dans le système HSE
-- Explique comment intégrer cette solution à l'environnement existant du secteur.
-- Décris la formation nécessaire pour les utilisateurs en tenant compte du contexte organisationnel.
-
-Étape 7 : Évaluation continue
-- Définis des métriques de succès pertinentes pour ce projet et ce secteur.
-- Propose une stratégie d'amélioration continue adaptée.
-
-Étape 8 : Catégorie ELON
-- Indique la catégorie prioritaire: [Équipement / Lieux / Opérations / Nature Humaine].
-- Explique pourquoi cette catégorie est critique pour ce projet dans ce secteur spécifique.
-
-IMPORTANT: Utilise les informations contextuelles fournies pour personnaliser chaque étape.`;
-
-        result = await analyzeContent({
-          analysisType: 'project_ideas',
-          text: contextualizedPrompt,
-          context: fullContext
-        });
-      }
+      // Récupération des statistiques sectorielles depuis l'API CNESST
+      const stats = await cnesstAPIService.getSectorStatistics(scianSectorId);
       
-      if (result) {
-        setName(result);
-        console.log('Résultat généré:', result); // Debug log
-      }
+      // Analyse des risques pour déterminer le niveau
+      const totalCases = stats.totalCases || 0;
+      const riskLevel = totalCases > 5000 ? 'high' : totalCases > 2000 ? 'medium' : 'low';
+      
+      setSectorInsights({
+        riskLevel,
+        topRisks: stats.topRisks?.slice(0, 3) || [],
+        totalCases,
+        trendAnalysis: stats.yearlyTrend || 'Données insuffisantes'
+      });
     } catch (error) {
-      console.error('Erreur lors de la génération:', error);
+      console.error('Erreur lors du chargement des insights:', error);
+      // Fallback avec données par défaut
+      setSectorInsights({
+        riskLevel: 'medium',
+        topRisks: ['Risques génériques'],
+        totalCases: 0,
+        trendAnalysis: 'Analyse non disponible'
+      });
+    } finally {
+      setLoadingInsights(false);
     }
   };
 
-  // 🆕 FONCTION: Afficher le contexte disponible
+  const generateProjectIdeas = async () => {
+    console.log('🚀 Génération d\'idées avec intégration CNESST démarrée');
+    
+    try {
+      // Préparation du contexte enrichi
+      const enrichedContext = await aiIntegrationService.buildEnrichedContext({
+        sector: scianSectorId || '',
+        criteria,
+        projectName: name,
+        organizationSize: 'medium', // À récupérer du ProfileScian
+        methodology: ['ISO 45001'], // À récupérer du ProfileScian
+        currentInput: name
+      });
+
+      // Génération des prompts enrichis
+      const enhancedPrompts = await aiIntegrationService.generateEnhancedPrompts(
+        enrichedContext,
+        'project_ideation'
+      );
+
+      // Appel à l'IA avec le prompt enrichi
+      const response = await generateContent(enhancedPrompts.mainPrompt, selectedLLM);
+      
+      console.log('✅ Réponse générée avec succès:', response);
+      
+      // Analyse de la qualité de la réponse
+      const qualityMetrics = await aiIntegrationService.evaluatePromptQuality(
+        enhancedPrompts.mainPrompt,
+        response || ''
+      );
+      
+      console.log('📊 Métriques de qualité:', qualityMetrics);
+      
+      return response;
+      
+    } catch (error) {
+      console.error('❌ Erreur lors de la génération:', error);
+      throw error;
+    }
+  };
+
   const getContextSummary = () => {
-    const { sector, profile } = getContextualData();
     const elements = [];
     
-    if (sector) {
-      elements.push(`Secteur: ${sector.name}`);
+    if (scianSectorId) {
+      elements.push(`Secteur SCIAN: ${scianSectorId}`);
     }
-    if (profile?.company?.size) {
-      elements.push(`Org: ${profile.company.size}`);
+    
+    if (sectorInsights) {
+      elements.push(`${sectorInsights.totalCases} cas historiques`);
+      elements.push(`Niveau de risque: ${sectorInsights.riskLevel}`);
     }
-    if (profile?.system?.selectedMethodologies?.length > 0) {
-      elements.push(`${profile.system.selectedMethodologies.length} méthodologies SST`);
+    
+    const criteriaCount = Object.values(criteria).filter(v => v > 0).length;
+    if (criteriaCount > 0) {
+      elements.push(`${criteriaCount} critères définis`);
     }
     
     return elements.length > 0 ? elements.join(' • ') : 'Contexte de base uniquement';
   };
-  
+
+  const getRiskLevelColor = (level: string) => {
+    switch (level) {
+      case 'high': return 'bg-red-100 text-red-800 border-red-200';
+      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'low': return 'bg-green-100 text-green-800 border-green-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getRiskIcon = (level: string) => {
+    switch (level) {
+      case 'high': return <AlertTriangle className="h-3 w-3" />;
+      case 'medium': return <TrendingUp className="h-3 w-3" />;
+      case 'low': return <Sparkles className="h-3 w-3" />;
+      default: return <Database className="h-3 w-3" />;
+    }
+  };
+
   return (
     <div className="mb-6 space-y-4">
+      {/* Input principal */}
       <div>
         <label htmlFor="project-name" className="block text-sm font-medium text-gray-700 mb-1">
           Nom / Description du projet
@@ -203,14 +167,63 @@ IMPORTANT: Utilise les informations contextuelles fournies pour personnaliser ch
           className="w-full"
         />
       </div>
-      
-      {/* 🆕 AMÉLIORATION: Sélecteur LLM avec contexte enrichi */}
+
+      {/* Insights sectoriels CNESST */}
+      {scianSectorId && (
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Database className="h-4 w-4 text-blue-600" />
+              <h4 className="text-sm font-medium text-blue-900">
+                Insights CNESST - Secteur {scianSectorId}
+              </h4>
+              {loadingInsights && <Loader2 className="h-3 w-3 animate-spin" />}
+            </div>
+            
+            {sectorInsights && !loadingInsights && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Badge 
+                    variant="outline" 
+                    className={`text-xs ${getRiskLevelColor(sectorInsights.riskLevel)}`}
+                  >
+                    {getRiskIcon(sectorInsights.riskLevel)}
+                    <span className="ml-1">
+                      Risque {sectorInsights.riskLevel === 'high' ? 'élevé' : 
+                              sectorInsights.riskLevel === 'medium' ? 'moyen' : 'faible'}
+                    </span>
+                  </Badge>
+                  <span className="text-xs text-blue-700">
+                    {sectorInsights.totalCases.toLocaleString()} cas analysés
+                  </span>
+                </div>
+                
+                {sectorInsights.topRisks.length > 0 && (
+                  <div className="text-xs text-blue-800">
+                    <span className="font-medium">Risques principaux:</span>{' '}
+                    {sectorInsights.topRisks.join(', ')}
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Assistant IA avec contexte enrichi */}
       <div className="border-t pt-4">
-        <h4 className="text-sm font-medium text-gray-700 mb-2">🤖 Assistant IA pour générer des idées</h4>
+        <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+          <Lightbulb className="h-4 w-4" />
+          Assistant IA pour générer des idées
+        </h4>
         
-        {/* 🆕 AJOUT: Affichage du contexte disponible */}
-        <div className="text-xs text-gray-500 mb-2 p-2 bg-gray-50 rounded">
-          📊 Contexte utilisé: {getContextSummary()}
+        {/* Affichage du contexte disponible */}
+        <div className="text-xs text-gray-600 mb-3 p-3 bg-gray-50 rounded-md border">
+          <div className="flex items-center gap-1 mb-1">
+            <Sparkles className="h-3 w-3" />
+            <span className="font-medium">Contexte enrichi:</span>
+          </div>
+          <div>{getContextSummary()}</div>
         </div>
         
         <LLMSelector
@@ -220,11 +233,14 @@ IMPORTANT: Utilise les informations contextuelles fournies pour personnaliser ch
           isLoading={isLoading}
         />
       </div>
-      
-      {/* Afficher l'amélioration de texte seulement si il y a du texte */}
+
+      {/* Amélioration de texte */}
       {name.trim() && (
         <div className="border-t pt-4">
-          <h4 className="text-sm font-medium text-gray-700 mb-2">✨ Améliorer le texte</h4>
+          <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+            <Sparkles className="h-4 w-4" />
+            Améliorer le texte
+          </h4>
           <AITextEnhancer
             originalText={name}
             onApply={setName}

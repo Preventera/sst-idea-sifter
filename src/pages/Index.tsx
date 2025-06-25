@@ -1,5 +1,5 @@
 // src/pages/Index.tsx
-// Version avec navigation vers ProjectForm et synchronisation complète
+// Version avec navigation vers ProjectForm et synchronisation complète + Système de modèles optimisé
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { X, TrendingUp, Users, BarChart3, FileQuestion, Plus, Edit3 } from "lucide-react";
+import { X, TrendingUp, Users, BarChart3, FileQuestion, Plus, Edit3, Database } from "lucide-react";
 import { calculateDetailedPriority, SCIAN_SECTORS } from "@/data/scian-sectors";
 import { supabaseClient } from "../lib/supabaseClient";
 
@@ -409,6 +409,16 @@ const Index: React.FC = () => {
                     {stats.avgScore !== null ? `${stats.avgScore}/10` : 'NaN/10'}
                   </div>
                 </div>
+                {/* 🚀 NOUVEAU : Statistique modèles */}
+                <div className="bg-orange-50 p-3 rounded-lg">
+                  <div className="flex items-center gap-2 text-orange-600 mb-1">
+                    <Database className="h-4 w-4" />
+                    <span className="text-xs font-medium">MODÈLES</span>
+                  </div>
+                  <div className="text-xl font-bold text-orange-700">
+                    1000+
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -440,12 +450,28 @@ const Index: React.FC = () => {
                 📋 Questionnaire de cadrage
               </Button>
               
+              {/* 🚀 BOUTON MODÈLES OPTIMISÉ - MODIFICATION CIBLÉE */}
               <Button
                 variant="outline"
+                onClick={() => navigate('/models')}
+                size="lg"
+                className="border-orange-500 text-orange-600 hover:bg-orange-50 relative"
+              >
+                <Database className="h-4 w-4 mr-2" />
+                🎯 Utiliser un modèle
+                <Badge className="ml-2 bg-orange-100 text-orange-800 text-xs">
+                  1000+ modèles
+                </Badge>
+              </Button>
+              
+              {/* Bouton pour les templates existants (optionnel) */}
+              <Button
+                variant="ghost"
                 onClick={() => setShowTemplates(true)}
                 size="lg"
+                className="text-gray-600 hover:text-gray-800"
               >
-                🎯 Utiliser un modèle
+                📄 Templates classiques
               </Button>
             </div>
 
@@ -460,6 +486,9 @@ const Index: React.FC = () => {
               <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700">
                 🎯 Interface complète disponible
               </Badge>
+              <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700">
+                🚀 Système modèles optimisé
+              </Badge>
             </div>
           </div>
 
@@ -468,7 +497,7 @@ const Index: React.FC = () => {
             {showTemplates && (
               <div>
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold">Modèles de projets</h2>
+                  <h2 className="text-xl font-semibold">Modèles de projets classiques</h2>
                   <Button variant="ghost" onClick={() => setShowTemplates(false)}>
                     <X className="h-4 w-4 mr-2" />
                     Fermer les modèles
@@ -597,12 +626,22 @@ const Index: React.FC = () => {
                   Aucun projet pour le moment
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  Commencez par créer votre premier projet d'IA en SST
+                  Commencez par créer votre premier projet d'IA en SST ou explorez nos 1000+ modèles
                 </p>
-                <Button onClick={handleNewProject} className="bg-blue-600 hover:bg-blue-700">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Créer mon premier projet
-                </Button>
+                <div className="flex gap-3 justify-center">
+                  <Button onClick={handleNewProject} className="bg-blue-600 hover:bg-blue-700">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Créer mon premier projet
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => navigate('/models')}
+                    className="border-orange-500 text-orange-600 hover:bg-orange-50"
+                  >
+                    <Database className="h-4 w-4 mr-2" />
+                    Explorer les modèles
+                  </Button>
+                </div>
               </div>
             )}
           </div>

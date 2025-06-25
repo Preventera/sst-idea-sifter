@@ -1,0 +1,325 @@
+/**
+ * Store pour la gestion des données sectorielles
+ * 
+ * Ce module gère l'état des données sectorielles agrégées provenant des fichiers CNESST
+ * et les rend accessibles à l'ensemble de l'application IGNITIA-XAI.
+ */
+
+import { aggregerDonneesCNESST } from '../services/data-processors/aggregateur_donnees_cnesst';
+
+// État initial
+const state = {
+  // Données brutes et agrégées
+  contexteSectoriel: {
+    secteur: "SCIAN 23 - Secteur non spécifié",
+    risquesPrincipaux: [],
+    agentsCausauxDominants: [],
+    populationARisque: [],
+    indicateurs: {
+      tauxTMS: 0,
+      tauxPSY: 0,
+      tauxMachine: 0,
+      tauxSurdite: 0
+    },
+    opportunitesIA: []
+  },
+  resultatsAggregation: null,
+  donneesCompletes: [],
+  
+  // État du chargement
+  chargementEnCours: false,
+  chargementTermine: false,
+  erreur: null,
+  
+  // Métadonnées
+  derniereMAJ: null,
+  fichiersSources: [],
+  secteurCourant: '23', // Par défaut, secteur Construction
+};
+
+// Getters pour accéder aux données formatées
+const getters = {
+  /**
+   * Obtient le contexte sectoriel actuel
+   * @param {Object} state - État du store
+   * @returns {Object} - Contexte sectoriel
+   */
+  getContexteSectoriel: (state) => {
+    return state.contexteSectoriel;
+  },
+  
+  /**
+   * Obtient les opportunités IA identifiées
+   * @param {Object} state - État du store
+   * @returns {Array} - Opportunités IA
+   */
+  getOpportunitesIA: (state) => {
+    return state.contexteSectoriel.opportunitesIA || [];
+  },
+  
+  /**
+   * Obtient le statut de chargement
+   * @param {Object} state - État du store
+   * @returns {Object} - Statut de chargement
+   */
+  getStatutChargement: (state) => {
+    return {
+      enCours: state.chargementEnCours,
+      termine: state.chargementTermine,
+      erreur: state.erreur
+    };
+  },
+  
+  /**
+   * Obtient les statistiques globales
+   * @param {Object} state - État du store
+   * @returns {Object} - Statistiques globales
+   */
+  getStatistiquesGlobales: (state) => {
+    if (!state.resultatsAggregation || !state.resultatsAggregation.global) {
+      return null;
+    }
+    
+    return state.resultatsAggregation.global;
+  },
+  
+  /**
+   * Obtient les tendances annuelles
+   * @param {Object} state - État du store
+   * @returns {Array} - Tendances annuelles
+   */
+  getTendancesAnnuelles: (state) => {
+    if (!state.resultatsAggregation || !state.resultatsAggregation.tendancesAnnuelles) {
+      return [];
+    }
+    
+    return state.resultatsAggregation.tendancesAnnuelles;
+  },
+  
+  /**
+   * Obtient le profil démographique
+   * @param {Object} state - État du store
+   * @returns {Object} - Profil démographique
+   */
+  getProfilDemographique: (state) => {
+    if (!state.resultatsAggregation || !state.resultatsAggregation.profilDemographique) {
+      return null;
+    }
+    
+    return state.resultatsAggregation.profilDemographique;
+  },
+  
+  /**
+   * Obtient les données pour un secteur spécifique
+   * @param {Object} state - État du store
+   * @returns {Function} - Fonction qui retourne les données d'un secteur
+   */
+  getDonneesSecteur: (state) => (codeSCIAN) => {
+    if (!state.resultatsAggregation || !state.resultatsAggregation.parSecteur) {
+      return null;
+    }
+    
+    return state.resultatsAggregation.parSecteur[codeSCIAN] || null;
+  }
+};
+
+// Actions pour interagir avec le store
+const actions = {
+  /**
+   * Charge et agrège les données des fichiers CNESST
+   * @param {Object} context - Contexte du store
+   * @param {Array} fichiers - Fichiers CSV à traiter
+   * @returns {Promise} - Promise résolue avec les données agrégées
+   */
+  async chargerDonneesCNESST({ commit, state }, fichiers) {
+    // Si déjà en cours de chargement, ne pas relancer
+    if (state.chargementEnCours) {
+      return;
+    }
+    
+    commit('setChargementEnCours', true);
+    commit('setErreur', null);
+    
+    try {
+      // Agréger les données
+      const resultats = await aggregerDonneesCNESST(fichiers);
+      
+      // Mettre à jour l'état
+      commit('setContexteSectoriel', resultats.contexteSectoriel);
+      commit('setResultatsAggregation', resultats.resultatsAggregation);
+      commit('setDonneesCompletes', resultats.donneesCompletes);
+      commit('setFichiersSources', fichiers.map(f => f.nom));
+      commit('setDerniereMAJ', new Date());
+      commit('setChargementTermine', true);
+      
+      return resultats;
+    } catch (erreur) {
+      console.error('Erreur lors du chargement des données CNESST:', erreur);
+      commit('setErreur', erreur.message || 'Erreur lors du traitement des données');
+      throw erreur;
+    } finally {
+      commit('setChargementEnCours', false);
+    }
+  },
+  
+  /**
+   * Change le secteur actuel et met à jour le contexte sectoriel
+   * @param {Object} context - Contexte du store
+   * @param {string} codeSCIAN - Code SCIAN du secteur
+   */
+  changerSecteurCourant({ commit, state, getters }, codeSCIAN) {
+    commit('setSecteurCourant', codeSCIAN);
+    
+    // Si les données sont déjà chargées, mettre à jour le contexte sectoriel
+    if (state.resultatsAggregation && state.resultatsAggregation.parSecteur) {
+      const donneesSecteur = getters.getDonneesSecteur(codeSCIAN);
+      
+      if (donneesSecteur) {
+        // Logique pour générer le contexte sectoriel à partir des données du secteur
+        // Cette logique serait similaire à la fonction genererContexteSectoriel dans l'agrégateur
+        // Pour simplifier, on pourrait implémenter cette logique dans une fonction utilitaire
+        
+        // Pour l'instant, on se contente de mettre à jour le secteur dans le contexte
+        const contexteMisAJour = {
+          ...state.contexteSectoriel,
+          secteur: `SCIAN ${codeSCIAN} - [Nom du secteur]`
+        };
+        
+        commit('setContexteSectoriel', contexteMisAJour);
+      }
+    }
+  },
+  
+  /**
+   * Réinitialise l'état du store
+   * @param {Object} context - Contexte du store
+   */
+  reinitialiser({ commit }) {
+    commit('reinitialiserEtat');
+  }
+};
+
+// Mutations pour modifier l'état
+const mutations = {
+  setContexteSectoriel(state, contexteSectoriel) {
+    state.contexteSectoriel = contexteSectoriel;
+  },
+  
+  setResultatsAggregation(state, resultats) {
+    state.resultatsAggregation = resultats;
+  },
+  
+  setDonneesCompletes(state, donnees) {
+    state.donneesCompletes = donnees;
+  },
+  
+  setChargementEnCours(state, statut) {
+    state.chargementEnCours = statut;
+  },
+  
+  setChargementTermine(state, statut) {
+    state.chargementTermine = statut;
+  },
+  
+  setErreur(state, erreur) {
+    state.erreur = erreur;
+  },
+  
+  setDerniereMAJ(state, date) {
+    state.derniereMAJ = date;
+  },
+  
+  setFichiersSources(state, fichiers) {
+    state.fichiersSources = fichiers;
+  },
+  
+  setSecteurCourant(state, secteur) {
+    state.secteurCourant = secteur;
+  },
+  
+  reinitialiserEtat(state) {
+    // Réinitialiser à l'état initial
+    state.contexteSectoriel = {
+      secteur: "SCIAN 23 - Secteur non spécifié",
+      risquesPrincipaux: [],
+      agentsCausauxDominants: [],
+      populationARisque: [],
+      indicateurs: {
+        tauxTMS: 0,
+        tauxPSY: 0,
+        tauxMachine: 0,
+        tauxSurdite: 0
+      },
+      opportunitesIA: []
+    };
+    state.resultatsAggregation = null;
+    state.donneesCompletes = [];
+    state.chargementEnCours = false;
+    state.chargementTermine = false;
+    state.erreur = null;
+    state.derniereMAJ = null;
+    state.fichiersSources = [];
+    state.secteurCourant = '23';
+  }
+};
+
+// Exporter le store
+export default {
+  namespaced: true,
+  state,
+  getters,
+  actions,
+  mutations
+};
+
+// Si vous n'utilisez pas Vuex, vous pouvez adapter ce code
+// pour créer un service de gestion d'état simple
+export class DonneesSecteursService {
+  constructor() {
+    this.state = { ...state };
+    this.listeners = [];
+  }
+  
+  getState() {
+    return this.state;
+  }
+  
+  async chargerDonneesCNESST(fichiers) {
+    this.state.chargementEnCours = true;
+    this.state.erreur = null;
+    this.notifyListeners();
+    
+    try {
+      const resultats = await aggregerDonneesCNESST(fichiers);
+      
+      this.state.contexteSectoriel = resultats.contexteSectoriel;
+      this.state.resultatsAggregation = resultats.resultatsAggregation;
+      this.state.donneesCompletes = resultats.donneesCompletes;
+      this.state.fichiersSources = fichiers.map(f => f.nom);
+      this.state.derniereMAJ = new Date();
+      this.state.chargementTermine = true;
+      
+      this.notifyListeners();
+      return resultats;
+    } catch (erreur) {
+      console.error('Erreur lors du chargement des données CNESST:', erreur);
+      this.state.erreur = erreur.message || 'Erreur lors du traitement des données';
+      this.notifyListeners();
+      throw erreur;
+    } finally {
+      this.state.chargementEnCours = false;
+      this.notifyListeners();
+    }
+  }
+  
+  subscribe(listener) {
+    this.listeners.push(listener);
+    return () => {
+      this.listeners = this.listeners.filter(l => l !== listener);
+    };
+  }
+  
+  notifyListeners() {
+    this.listeners.forEach(listener => listener(this.state));
+  }
+}

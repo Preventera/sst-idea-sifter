@@ -1,0 +1,713 @@
+// src/components/project-form.tsx
+// Version simplifiée avec insights CNESST - Compatible avec votre structure
+
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { AlertCircle, Wand2, Brain, Database, TrendingUp, AlertTriangle, Sparkles, Lightbulb, Loader2 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
+import { supabaseClient as supabase } from "@/lib/supabaseClient";
+// Alternative si export différent: import supabaseClient from "@/lib/supabaseClient";
+import { toast } from "@/hooks/use-toast";
+import { Criteria, Project } from "@/types/project";
+import { useAIAssistant } from "@/hooks/use-ai-assistant";
+
+interface SectorInsights {
+  riskLevel: 'low' | 'medium' | 'high';
+  topRisks: string[];
+  totalCases: number;
+  trendAnalysis: string;
+  recommendations: string[];
+}
+
+interface ProjectFormProps {
+  onProjectCreated?: (project: Project) => void;
+  onCancel?: () => void;
+}
+
+export const ProjectForm: React.FC<ProjectFormProps> = ({ onProjectCreated, onCancel }) => {
+  // États du formulaire
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [selectedSector, setSelectedSector] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // États pour les insights CNESST
+  const [sectorInsights, setSectorInsights] = useState<SectorInsights | null>(null);
+  const [loadingInsights, setLoadingInsights] = useState(false);
+  const [showEnhancedAssistant, setShowEnhancedAssistant] = useState(false);
+
+  // États pour l'auto-évaluation
+  const [autoEvaluationSuggestions, setAutoEvaluationSuggestions] = useState<Criteria | null>(null);
+  const [autoEvaluationLoading, setAutoEvaluationLoading] = useState(false);
+  const [confidenceLevel, setConfidenceLevel] = useState(0);
+
+  const [criteria, setCriteria] = useState<Criteria>({
+    technicalFeasibility: 5,
+    businessValue: 5,
+    riskReduction: 5,
+    implementationCost: 5,
+    timeToMarket: 5,
+    userAcceptance: 5,
+    regulatoryCompliance: 5,
+  });
+
+  const { generateContent, isLoading: aiLoading } = useAIAssistant();
+
+  // Secteurs SCIAN simplifiés
+  const SCIAN_SECTORS = [
+    { value: "11", label: "11 - Agriculture, foresterie, pêche et chasse" },
+    { value: "21", label: "21 - Extraction minière, exploitation en carrière, et extraction de pétrole et de gaz" },
+    { value: "23", label: "23 - Construction" },
+    { value: "31-33", label: "31-33 - Fabrication" },
+    { value: "48-49", label: "48-49 - Transport et entreposage" },
+    { value: "62", label: "62 - Soins de santé et assistance sociale" },
+  ];
+
+  // Chargement des insights CNESST quand le secteur change
+  useEffect(() => {
+    if (selectedSector) {
+      loadSectorInsights();
+    } else {
+      setSectorInsights(null);
+      setShowEnhancedAssistant(false);
+    }
+  }, [selectedSector]);
+
+  const loadSectorInsights = async () => {
+    if (!selectedSector) return;
+    
+    setLoadingInsights(true);
+    try {
+      // Simulation des données CNESST (remplace l'appel API réel)
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simule l'appel API
+      
+      const mockData = generateMockSectorData(selectedSector);
+      setSectorInsights(mockData);
+      setShowEnhancedAssistant(true);
+      
+    } catch (error) {
+      console.error('Erreur lors du chargement des insights:', error);
+      // Fallback avec données génériques
+      setSectorInsights({
+        riskLevel: 'medium',
+        topRisks: ['Risques génériques du secteur'],
+        totalCases: 0,
+        trendAnalysis: 'Données non disponibles',
+        recommendations: ['Prioriser la prévention', 'Implémenter des solutions IA adaptées']
+      });
+      setShowEnhancedAssistant(true);
+    } finally {
+      setLoadingInsights(false);
+    }
+  };
+
+  const generateMockSectorData = (sector: string): SectorInsights => {
+    const sectorData: Record<string, SectorInsights> = {
+      "23": {
+        riskLevel: 'high',
+        topRisks: ['Chutes de hauteur', 'Équipements lourds', 'Matériaux dangereux'],
+        totalCases: 25000,
+        trendAnalysis: 'Tendance à la hausse',
+        recommendations: [
+          '🔴 Secteur à haut risque - Solutions IA prioritaires',
+          '🎯 Focus sur la détection de chutes',
+          '📋 Intégrer les normes ISO 45001'
+        ]
+      },
+      "31-33": {
+        riskLevel: 'medium',
+        topRisks: ['Machines industrielles', 'Substances chimiques', 'Bruit'],
+        totalCases: 12000,
+        trendAnalysis: 'Tendance stable',
+        recommendations: [
+          '🟡 Risque modéré - Optimisation recommandée',
+          '🤖 Surveillance des équipements par IA',
+          '🔧 Maintenance prédictive'
+        ]
+      },
+      "62": {
+        riskLevel: 'medium',
+        topRisks: ['Troubles musculo-squelettiques', 'Exposition biologique', 'Stress'],
+        totalCases: 8000,
+        trendAnalysis: 'Tendance légèrement décroissante',
+        recommendations: [
+          '🏥 Secteur sensible - Prévention ciblée',
+          '💡 IA pour l\'ergonomie',
+          '🛡️ Protection du personnel soignant'
+        ]
+      }
+    };
+
+    return sectorData[sector] || {
+      riskLevel: 'low',
+      topRisks: ['Risques génériques'],
+      totalCases: 1000,
+      trendAnalysis: 'Données limitées',
+      recommendations: ['🟢 Risque faible - Maintien des bonnes pratiques']
+    };
+  };
+
+  const getRiskLevelColor = (level: string) => {
+    switch (level) {
+      case 'high': return 'bg-red-100 text-red-800 border-red-200';
+      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'low': return 'bg-green-100 text-green-800 border-green-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getRiskIcon = (level: string) => {
+    switch (level) {
+      case 'high': return <AlertTriangle className="h-3 w-3" />;
+      case 'medium': return <TrendingUp className="h-3 w-3" />;
+      case 'low': return <Sparkles className="h-3 w-3" />;
+      default: return <Database className="h-3 w-3" />;
+    }
+  };
+
+  const generateEnhancedIdeas = async () => {
+    if (!name.trim()) {
+      toast({
+        title: "Champ requis",
+        description: "Veuillez saisir un nom pour le projet",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Génération avec contexte CNESST si disponible
+      let prompt = "";
+      
+      if (sectorInsights && selectedSector) {
+        prompt = `En tant qu'expert en IA et SST, générez 3 idées de projets d'intelligence artificielle pour "${name}".
+
+CONTEXTE SECTORIEL CNESST:
+- Secteur: ${selectedSector}
+- Niveau de risque: ${sectorInsights.riskLevel}
+- Cas analysés: ${sectorInsights.totalCases.toLocaleString()}
+- Risques principaux: ${sectorInsights.topRisks.join(', ')}
+
+Pour chaque idée, fournissez:
+1. Un titre accrocheur
+2. Une description technique claire
+3. L'impact SST attendu spécifique au secteur
+4. Les technologies recommandées
+5. Les critères de succès mesurables
+
+Intégrez les recommandations sectorielles: ${sectorInsights.recommendations.join(', ')}`;
+      } else {
+        prompt = `En tant qu'expert en IA et SST, générez 3 idées de projets d'intelligence artificielle basées sur: "${name}".
+
+Pour chaque idée, fournissez:
+1. Un titre accrocheur
+2. Une description technique claire
+3. L'impact SST attendu
+4. Les technologies recommandées
+5. Les critères de succès`;
+      }
+
+      const response = await generateContent(prompt, 'claude');
+      
+      if (response) {
+        setDescription(response);
+        toast({
+          title: "✨ Idées générées avec succès",
+          description: sectorInsights ? 
+            `Génération enrichie avec ${sectorInsights.totalCases.toLocaleString()} cas CNESST` : 
+            "Génération standard effectuée",
+        });
+      }
+      
+    } catch (error) {
+      console.error('Erreur génération:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de générer les idées. Veuillez réessayer.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Suppression des fonctions de simulation non utilisées
+
+  const handleAutoEvaluation = async () => {
+    if (!name.trim() && !description.trim()) {
+      toast({
+        title: "Contenu insuffisant",
+        description: "Veuillez saisir au moins un nom ou une description pour l'auto-évaluation",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setAutoEvaluationLoading(true);
+    try {
+      const content = `${name}\n\n${description}`.trim();
+      const contextInfo = selectedSector ? `Secteur: ${selectedSector}` : '';
+      
+      const prompt = `En tant qu'expert en évaluation de projets IA-SST, évaluez ce projet selon ces 7 critères (score de 1 à 10):
+
+${contextInfo ? `${contextInfo}\n` : ''}
+Projet à évaluer: ${content}
+
+Fournissez UNIQUEMENT les scores numériques dans ce format exact:
+Faisabilité technique: X/10
+Valeur d'affaires: X/10  
+Réduction des risques: X/10
+Coût d'implémentation: X/10
+Temps de mise en marché: X/10
+Acceptation utilisateur: X/10
+Conformité réglementaire: X/10
+
+Niveau de confiance global: X/10`;
+
+      const response = await generateContent(prompt, 'claude');
+      
+      if (response) {
+        const scores = extractScoresFromResponse(response);
+        if (scores) {
+          setAutoEvaluationSuggestions(scores);
+          setConfidenceLevel(extractConfidenceFromResponse(response));
+          toast({
+            title: "✅ Auto-évaluation terminée",
+            description: "Les scores suggérés sont maintenant disponibles",
+          });
+        } else {
+          throw new Error("Format de réponse invalide");
+        }
+      }
+    } catch (error) {
+      console.error('Erreur auto-évaluation:', error);
+      toast({
+        title: "Erreur d'évaluation",
+        description: "Impossible d'évaluer automatiquement. Veuillez essayer manuellement.",
+        variant: "destructive",
+      });
+    } finally {
+      setAutoEvaluationLoading(false);
+    }
+  };
+
+  const extractScoresFromResponse = (response: string): Criteria | null => {
+    try {
+      const lines = response.split('\n');
+      const scores: Partial<Criteria> = {};
+      
+      for (const line of lines) {
+        if (line.includes('Faisabilité technique:')) {
+          scores.technicalFeasibility = extractScore(line);
+        } else if (line.includes('Valeur d\'affaires:')) {
+          scores.businessValue = extractScore(line);
+        } else if (line.includes('Réduction des risques:')) {
+          scores.riskReduction = extractScore(line);
+        } else if (line.includes('Coût d\'implémentation:')) {
+          scores.implementationCost = extractScore(line);
+        } else if (line.includes('Temps de mise en marché:')) {
+          scores.timeToMarket = extractScore(line);
+        } else if (line.includes('Acceptation utilisateur:')) {
+          scores.userAcceptance = extractScore(line);
+        } else if (line.includes('Conformité réglementaire:')) {
+          scores.regulatoryCompliance = extractScore(line);
+        }
+      }
+      
+      return Object.keys(scores).length === 7 ? scores as Criteria : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const extractScore = (line: string): number => {
+    const match = line.match(/(\d+)\/10/);
+    return match ? Math.min(10, Math.max(1, parseInt(match[1]))) : 5;
+  };
+
+  const extractConfidenceFromResponse = (response: string): number => {
+    const confidenceMatch = response.match(/Niveau de confiance global:\s*(\d+)\/10/);
+    return confidenceMatch ? parseInt(confidenceMatch[1]) : 7;
+  };
+
+  const applySuggestedScores = () => {
+    if (autoEvaluationSuggestions) {
+      setCriteria(autoEvaluationSuggestions);
+      setAutoEvaluationSuggestions(null);
+      toast({
+        title: "Scores appliqués",
+        description: "Les scores suggérés ont été appliqués aux critères",
+      });
+    }
+  };
+
+  const ignoreAutoScoring = () => {
+    setAutoEvaluationSuggestions(null);
+    toast({
+      title: "Suggestions ignorées",
+      description: "Vous pouvez ajuster les critères manuellement",
+    });
+  };
+
+  const calculateTotalScore = () => {
+    const weights = {
+      technicalFeasibility: 0.2,
+      businessValue: 0.2,
+      riskReduction: 0.15,
+      implementationCost: 0.15,
+      timeToMarket: 0.1,
+      userAcceptance: 0.1,
+      regulatoryCompliance: 0.1,
+    };
+
+    return Object.entries(criteria).reduce((total, [key, value]) => {
+      return total + (value * weights[key as keyof Criteria]);
+    }, 0);
+  };
+
+  const handleSubmit = async () => {
+    if (!name.trim()) {
+      toast({
+        title: "Nom requis",
+        description: "Veuillez saisir un nom pour le projet",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!selectedSector) {
+      toast({
+        title: "Secteur requis", 
+        description: "Veuillez sélectionner un secteur d'activité",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const totalScore = calculateTotalScore();
+      
+      const { data, error } = await supabase
+        .from('projects')
+        .insert([
+          {
+            name: name.trim(),
+            description: description.trim(),
+            sector: selectedSector,
+            criteria,
+            total_score: totalScore,
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Projet créé avec succès",
+        description: `Score total: ${totalScore.toFixed(2)}/10`,
+      });
+
+      if (onProjectCreated && data) {
+        onProjectCreated(data);
+      } else {
+        window.location.href = '/';
+      }
+
+    } catch (error) {
+      console.error('Erreur création projet:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de créer le projet. Veuillez réessayer.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="w-full max-w-5xl mx-auto p-6 space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Brain className="h-5 w-5" />
+            Nouveau projet IA-SST
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          
+          {/* Section Nom du projet avec insights CNESST intégrés */}
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="project-name" className="block text-sm font-medium text-gray-700 mb-2">
+                Nom du projet *
+              </label>
+              <Input
+                id="project-name"
+                placeholder="Ex: Système de détection IA pour équipements de protection"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full"
+              />
+            </div>
+
+            {/* Insights CNESST contextuels */}
+            {selectedSector && sectorInsights && (
+              <Card className="bg-blue-50 border-blue-200">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Database className="h-4 w-4 text-blue-600" />
+                    <h4 className="text-sm font-medium text-blue-900">
+                      Insights CNESST - Secteur {selectedSector}
+                    </h4>
+                    {loadingInsights && <Loader2 className="h-3 w-3 animate-spin" />}
+                  </div>
+                  
+                  {!loadingInsights && (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Badge 
+                          variant="outline" 
+                          className={`text-xs ${getRiskLevelColor(sectorInsights.riskLevel)}`}
+                        >
+                          {getRiskIcon(sectorInsights.riskLevel)}
+                          <span className="ml-1">
+                            Risque {sectorInsights.riskLevel === 'high' ? 'élevé' : 
+                                    sectorInsights.riskLevel === 'medium' ? 'moyen' : 'faible'}
+                          </span>
+                        </Badge>
+                        <span className="text-xs text-blue-700">
+                          {sectorInsights.totalCases.toLocaleString()} cas analysés
+                        </span>
+                      </div>
+                      
+                      {sectorInsights.topRisks.length > 0 && (
+                        <div className="text-xs text-blue-800">
+                          <span className="font-medium">Risques principaux:</span>{' '}
+                          {sectorInsights.topRisks.join(', ')}
+                        </div>
+                      )}
+                      
+                      {sectorInsights.recommendations.length > 0 && (
+                        <div className="text-xs text-blue-800">
+                          <div className="font-medium mb-1">Recommandations:</div>
+                          <ul className="space-y-1">
+                            {sectorInsights.recommendations.map((rec, idx) => (
+                              <li key={idx} className="flex items-start gap-1">
+                                <span className="text-blue-600">•</span>
+                                <span>{rec}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Assistant IA enrichi */}
+            {name.trim() && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Lightbulb className="h-4 w-4 text-purple-600" />
+                  <span className="text-sm font-medium text-gray-700">Assistant IA</span>
+                  {showEnhancedAssistant && (
+                    <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                      ✨ Mode enrichi CNESST
+                    </Badge>
+                  )}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={generateEnhancedIdeas}
+                  disabled={aiLoading}
+                  className="w-full"
+                >
+                  {aiLoading ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Wand2 className="h-4 w-4 mr-2" />
+                  )}
+                  {showEnhancedAssistant 
+                    ? "Générer des idées contextualisées" 
+                    : "Générer des idées avec l'IA"
+                  }
+                </Button>
+                {showEnhancedAssistant && (
+                  <p className="text-xs text-gray-600">
+                    Génération enrichie avec {sectorInsights?.totalCases.toLocaleString()} cas CNESST du secteur {selectedSector}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Secteur d'activité */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Secteur d'activité *
+            </label>
+            <select
+              value={selectedSector}
+              onChange={(e) => setSelectedSector(e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">Sélectionnez un secteur SCIAN</option>
+              {SCIAN_SECTORS.map((sector) => (
+                <option key={sector.value} value={sector.value}>
+                  {sector.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Description du projet */}
+          <div>
+            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+              Description du projet
+            </label>
+            <Textarea
+              id="description"
+              placeholder="Décrivez votre projet d'intelligence artificielle en détail..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={6}
+              className="w-full"
+            />
+          </div>
+
+          {/* Auto-évaluation IA */}
+          <Card className="bg-gray-50">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Brain className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium">Auto-évaluation IA des critères</span>
+                  {confidenceLevel > 0 && (
+                    <Badge variant="outline" className="text-xs">
+                      Confiance: {confidenceLevel}/10
+                    </Badge>
+                  )}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAutoEvaluation}
+                  disabled={autoEvaluationLoading}
+                >
+                  {autoEvaluationLoading ? (
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  ) : (
+                    <Wand2 className="h-4 w-4 mr-1" />
+                  )}
+                  Évaluer automatiquement
+                </Button>
+              </div>
+
+              {autoEvaluationSuggestions && (
+                <Alert className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="flex items-center justify-between">
+                    <span>L'IA suggère des scores basés sur l'analyse du projet</span>
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={applySuggestedScores}>
+                        Appliquer
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={ignoreAutoScoring}>
+                        Ignorer
+                      </Button>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Critères d'évaluation simplifiés */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Critères d'évaluation</h3>
+            <div className="grid gap-4">
+              {Object.entries(criteria).map(([key, value]) => {
+                const labels: Record<string, string> = {
+                  technicalFeasibility: "Faisabilité technique",
+                  businessValue: "Valeur d'affaires",
+                  riskReduction: "Réduction des risques",
+                  implementationCost: "Coût d'implémentation",
+                  timeToMarket: "Temps de mise en marché",
+                  userAcceptance: "Acceptation utilisateur",
+                  regulatoryCompliance: "Conformité réglementaire",
+                };
+                
+                return (
+                  <div key={key} className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <label className="text-sm font-medium">{labels[key]}</label>
+                      <span className="text-sm text-gray-600">{value}/10</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      value={value}
+                      onChange={(e) => setCriteria(prev => ({ 
+                        ...prev, 
+                        [key]: parseInt(e.target.value) 
+                      }))}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Score total */}
+          <Card className="bg-blue-50">
+            <CardContent className="p-4">
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-blue-900">Score total</h3>
+                <div className="text-3xl font-bold text-blue-600">
+                  {calculateTotalScore().toFixed(2)}/10
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Actions */}
+          <div className="flex gap-4 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onCancel ? onCancel() : window.history.back()}
+              className="flex-1"
+            >
+              Annuler
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSubmit}
+              disabled={loading}
+              className="flex-1"
+            >
+              {loading ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Wand2 className="h-4 w-4 mr-2" />
+              )}
+              Créer le projet
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};

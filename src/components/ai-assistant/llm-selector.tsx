@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,14 +34,8 @@ const LLMSelector = ({ selectedLLM, onLLMChange, onGenerate, isLoading, disabled
     setIsChecking(true);
     
     try {
-      // Test OpenAI
-      const { error: openaiError } = await supabase.functions.invoke('openai-assistant', {
-        body: { 
-          type: 'project_description', 
-          prompt: 'test', 
-          context: 'test'
-        }
-      });
+      // Test OpenAI - DÉSACTIVÉ TEMPORAIREMENT
+      // Pas de test OpenAI pour éviter l'erreur 500
       
       // Test Claude
       const { error: claudeError } = await supabase.functions.invoke('claude-analyzer', {
@@ -54,7 +47,7 @@ const LLMSelector = ({ selectedLLM, onLLMChange, onGenerate, isLoading, disabled
       });
 
       setLlmStatus({
-        openai: !openaiError || !openaiError.message?.includes('API key'),
+        openai: false, // FORCÉ À FALSE - quota épuisé
         claude: !claudeError || !claudeError.message?.includes('API key')
       });
     } catch (error) {
@@ -69,22 +62,29 @@ const LLMSelector = ({ selectedLLM, onLLMChange, onGenerate, isLoading, disabled
     {
       id: 'openai' as LLMProvider,
       name: 'OpenAI GPT-4',
-      description: 'Rapide et créatif pour les descriptions',
+      description: 'Temporairement indisponible (quota épuisé)',
       icon: <Zap className="h-4 w-4" />,
-      available: llmStatus.openai,
-      color: 'green'
+      available: false, // FORCÉ À FALSE
+      color: 'red'
     },
     {
       id: 'claude' as LLMProvider,
       name: 'Anthropic Claude',
-      description: 'Excellent pour l\'analyse détaillée',
+      description: 'Recommandé - Excellent pour l\'analyse SST détaillée',
       icon: <Brain className="h-4 w-4" />,
       available: llmStatus.claude,
       color: 'blue'
     }
   ];
 
-  const hasAvailableLLM = llmStatus.openai || llmStatus.claude;
+  // Forcer Claude si OpenAI est sélectionné mais indisponible
+  useEffect(() => {
+    if (selectedLLM === 'openai' && llmStatus.claude && !llmStatus.openai) {
+      onLLMChange('claude');
+    }
+  }, [llmStatus, selectedLLM, onLLMChange]);
+
+  const hasAvailableLLM = llmStatus.claude; // Seulement Claude maintenant
 
   if (isChecking) {
     return (
@@ -108,15 +108,15 @@ const LLMSelector = ({ selectedLLM, onLLMChange, onGenerate, isLoading, disabled
         </CardHeader>
         <CardContent className="pt-0">
           <p className="text-sm text-orange-700 mb-3">
-            Aucune clé API configurée. Ajoutez au moins une clé dans les secrets Supabase :
+            Clé Claude API requise. Ajoutez la clé dans les secrets Supabase :
           </p>
           <div className="space-y-2 text-xs">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-red-400 rounded-full"></div>
-              <span>OPENAI_API_KEY (pour GPT-4)</span>
+              <span>OPENAI_API_KEY (quota épuisé temporairement)</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-red-400 rounded-full"></div>
+              <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
               <span>ANTHROPIC_API_KEY (pour Claude)</span>
             </div>
           </div>
@@ -126,13 +126,13 @@ const LLMSelector = ({ selectedLLM, onLLMChange, onGenerate, isLoading, disabled
   }
 
   return (
-    <Card className="border-purple-200 bg-gradient-to-r from-purple-50 to-blue-50">
+    <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50">
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
-          <Brain className="h-4 w-4 text-purple-600" />
-          <CardTitle className="text-sm text-purple-800">Générateur IA</CardTitle>
-          <Badge variant="outline" className="text-xs">
-            {hasAvailableLLM ? 'Prêt' : 'Configuration requise'}
+          <Brain className="h-4 w-4 text-blue-600" />
+          <CardTitle className="text-sm text-blue-800">Générateur IA - Claude</CardTitle>
+          <Badge variant="outline" className="text-xs bg-green-50 text-green-700">
+            Prêt
           </Badge>
         </div>
       </CardHeader>
@@ -140,7 +140,7 @@ const LLMSelector = ({ selectedLLM, onLLMChange, onGenerate, isLoading, disabled
         <div className="space-y-4">
           <div>
             <Label className="text-sm font-medium text-gray-700 mb-2 block">
-              Choisir le modèle IA :
+              Modèle IA sélectionné :
             </Label>
             <RadioGroup 
               value={selectedLLM} 
@@ -185,7 +185,7 @@ const LLMSelector = ({ selectedLLM, onLLMChange, onGenerate, isLoading, disabled
           <Button
             onClick={onGenerate}
             disabled={disabled || isLoading || !hasAvailableLLM}
-            className="w-full bg-purple-600 hover:bg-purple-700"
+            className="w-full bg-blue-600 hover:bg-blue-700"
           >
             {isLoading ? (
               <>
@@ -195,7 +195,7 @@ const LLMSelector = ({ selectedLLM, onLLMChange, onGenerate, isLoading, disabled
             ) : (
               <>
                 <Brain className="h-4 w-4 mr-2" />
-                🪄 Générer des idées de projets
+                🪄 Générer des idées avec Claude
               </>
             )}
           </Button>

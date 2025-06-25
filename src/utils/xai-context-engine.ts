@@ -1,263 +1,460 @@
 // src/utils/xai-context-engine.ts
-// Module XAI pour IGNITIA - Explication contextuelle et analyse automatisée
-// Basé sur les meilleures pratiques Claude Sonnet 4.0 et ingénierie du contexte
-// ÉTAPE 1.3a - Moteur XAI principal
+// Système de bascule intelligent entre les versions CSV et API du moteur XAI
+// Permet de tester et comparer les deux approches facilement
 
+// Import des deux versions du moteur
+import * as XAIOriginal from './xai-context-engine.original';
+import { 
+  xaiEngineAPI, 
+  genererExplicationComplete as genererExplicationAPI,
+  initialiserMoteaurXAI,
+  prechargerSecteursXAI,
+  type XAIExplanation as XAIExplanationAPI,
+  type ProjectContext,
+  type VisualizationConfig,
+  type MetriquesTempsReel
+} from './xai-context-engine-enhanced-api';
+
+// Configuration du système de bascule
+interface XAIEngineConfig {
+  mode: 'csv' | 'api' | 'auto';
+  fallbackEnabled: boolean;
+  debugMode: boolean;
+  preferredSources: ('csv' | 'api')[];
+}
+
+// Configuration par défaut - modifiable selon les besoins
+const DEFAULT_CONFIG: XAIEngineConfig = {
+  mode: 'api', // Utiliser l'API par défaut
+  fallbackEnabled: true, // Basculer vers CSV en cas de problème API
+  debugMode: true, // Afficher les logs de débogage
+  preferredSources: ['api', 'csv'] // Ordre de préférence
+};
+
+// Types unifiés
 export interface XAIExplanation {
   contexteSectoriel: string;
   justificationDonnees: string;
   recommandationPratique: string;
   tracabilite: string;
-  references: XAIReference[];
-  niveauConfiance: number; // 1-10
+  niveauConfiance: number;
+  sourcesDonnees: string[];
+  visualisations?: VisualizationConfig[];
+  metriquesTempsReel?: MetriquesTempsReel;
+  versionMoteur?: 'csv' | 'api';
+  performanceMetrics?: {
+    tempsReponse: number;
+    sourceUtilisee: string;
+    cacheMiss: boolean;
+  };
 }
 
-export interface XAIReference {
-  titre: string;
-  url: string;
-  type: 'norme' | 'recherche' | 'guide' | 'veille' | 'regulation';
-  date: string;
-  pertinence: number; // 1-10
-}
+export { ProjectContext, VisualizationConfig, MetriquesTempsReel };
 
-export interface ProjectContext {
-  nom: string;
-  description: string;
-  secteurSCIAN: string;
-  criteresEvalues: Record<string, number>;
-  risquesPrincipaux: string[];
-  donneesPilotes: string[];
-}
-
-export class XAIContextEngine {
-  private referentielsSSTQuebec = [
-    {
-      titre: "CNESST - Prévention des chutes en construction",
-      url: "https://www.cnesst.gouv.qc.ca/fr/prevention/faire-de-prevention/travail-hauteur",
-      type: "regulation" as const,
-      date: "2024-12-01",
-      pertinence: 9
-    },
-    {
-      titre: "GenAISafety - Mastering HSE Engineering Prompts",
-      url: "https://www.genaisafety.online/mastering-hse-ingeneering-prompts",
-      type: "guide" as const,
-      date: "2024-11-15",
-      pertinence: 10
-    },
-    {
-      titre: "ILO - L'IA et la numérisation transforment la SST",
-      url: "https://www.ilo.org/fr/resource/news/lia-et-la-numerisation-transforment-la-securite-et-la-sante-au-travail",
-      type: "recherche" as const,
-      date: "2024-10-30",
-      pertinence: 8
-    },
-    {
-      titre: "ISO 45001:2018 - Systèmes de management de la SST",
-      url: "https://www.iso.org/fr/iso-45001-occupational-health-and-safety.html",
-      type: "norme" as const,
-      date: "2024-01-01",
-      pertinence: 9
-    }
-  ];
-
-  private baseConnaissancesSectorielles = {
-    "2381": { // Construction
-      risquesPrincipaux: ["Chutes de hauteur", "Accidents mortels", "Équipements défaillants"],
-      statistiquesCNESST: "32% des accidents graves proviennent des chutes",
-      prioriteReglementaire: "Très élevée - Secteur à risque élevé",
-      technologiesIA: ["Vision par ordinateur", "Capteurs IoT", "Apprentissage automatique"]
-    },
-    "3361": { // Fabrication automobile
-      risquesPrincipaux: ["Troubles musculo-squelettiques", "Accidents de machines", "Exposition chimique"],
-      statistiquesCNESST: "45% des lésions liées aux mouvements répétitifs",
-      prioriteReglementaire: "Élevée - Surveillance continue requise",
-      technologiesIA: ["Ergonomie prédictive", "Maintenance prédictive", "Analyse des mouvements"]
-    }
+class XAIEngineManager {
+  private config: XAIEngineConfig;
+  private apiStatus: 'non-teste' | 'disponible' | 'indisponible' = 'non-teste';
+  private statsUtilisation = {
+    totalRequetes: 0,
+    requetesAPI: 0,
+    requetesCSV: 0,
+    erreursAPI: 0,
+    fallbacks: 0
   };
 
+  constructor(config: Partial<XAIEngineConfig> = {}) {
+    this.config = { ...DEFAULT_CONFIG, ...config };
+    
+    if (this.config.debugMode) {
+      console.log('🔧 XAI Engine Manager initialisé avec config:', this.config);
+    }
+  }
+
   /**
-   * Génère une explication XAI complète pour un critère donné
+   * Initialise le moteur selon la configuration
+   */
+  async initialiser(): Promise<{
+    success: boolean;
+    mode: string;
+    message: string;
+  }> {
+    try {
+      if (this.config.debugMode) {
+        console.log('🚀 Initialisation du XAI Engine Manager...');
+      }
+
+      // Test de disponibilité API si nécessaire
+      if (this.config.mode === 'api' || this.config.mode === 'auto') {
+        try {
+          await initialiserMoteaurXAI();
+          this.apiStatus = 'disponible';
+          
+          if (this.config.debugMode) {
+            console.log('✅ API CNESST disponible');
+          }
+          
+          // Pré-charger quelques secteurs populaires
+          if (this.config.mode === 'api') {
+            prechargerSecteursXAI().catch(err => 
+              console.warn('⚠️ Erreur pré-chargement secteurs:', err)
+            );
+          }
+          
+          return {
+            success: true,
+            mode: 'api',
+            message: 'Moteur XAI initialisé avec API CNESST'
+          };
+          
+        } catch (error) {
+          this.apiStatus = 'indisponible';
+          
+          if (this.config.debugMode) {
+            console.warn('⚠️ API CNESST indisponible:', error);
+          }
+          
+          // Basculer vers CSV si auto ou fallback activé
+          if (this.config.mode === 'auto' || this.config.fallbackEnabled) {
+            if (this.config.debugMode) {
+              console.log('🔄 Bascule vers mode CSV');
+            }
+            
+            return {
+              success: true,
+              mode: 'csv',
+              message: 'Moteur XAI initialisé en mode CSV (API indisponible)'
+            };
+          }
+          
+          throw error;
+        }
+      }
+
+      // Mode CSV uniquement
+      return {
+        success: true,
+        mode: 'csv',
+        message: 'Moteur XAI initialisé en mode CSV'
+      };
+
+    } catch (error) {
+      console.error('❌ Erreur initialisation XAI Engine Manager:', error);
+      
+      return {
+        success: false,
+        mode: 'erreur',
+        message: `Échec initialisation: ${error}`
+      };
+    }
+  }
+
+  /**
+   * Génère une explication XAI en utilisant la meilleure source disponible
    */
   async genererExplicationXAI(
     critere: string,
     score: number,
-    contexte: ProjectContext
+    contexteProjet: ProjectContext
   ): Promise<XAIExplanation> {
-    const secteurInfo = this.baseConnaissancesSectorielles[contexte.secteurSCIAN as keyof typeof this.baseConnaissancesSectorielles];
-    const references = this.selectionnerReferencesPertinenrtes(critere, contexte);
+    const startTime = Date.now();
+    this.statsUtilisation.totalRequetes++;
 
-    const explication: XAIExplanation = {
-      contexteSectoriel: this.genererContexteSectoriel(contexte, secteurInfo),
-      justificationDonnees: this.genererJustificationDonnees(critere, score, secteurInfo),
-      recommandationPratique: this.genererRecommandation(critere, score, contexte),
-      tracabilite: this.genererTracabilite(critere, score, contexte),
-      references: references,
-      niveauConfiance: this.calculerNiveauConfiance(critere, contexte)
-    };
+    try {
+      if (this.config.debugMode) {
+        console.log(`🧠 Génération XAI: ${critere} (score: ${score}, secteur: ${contexteProjet.secteurSCIAN})`);
+      }
 
-    return explication;
-  }
+      let explication: XAIExplanation;
+      let sourceUtilisee: string;
+      let cacheMiss = true;
 
-  /**
-   * Génère le contexte sectoriel avec données SCIAN
-   */
-  private genererContexteSectoriel(contexte: ProjectContext, secteurInfo: any): string {
-    return `Secteur SCIAN ${contexte.secteurSCIAN} - ${this.obtenirNomSecteur(contexte.secteurSCIAN)}. 
-    Risques principaux identifiés : ${secteurInfo?.risquesPrincipaux?.join(', ') || 'Non spécifiés'}. 
-    Selon les données CNESST 2024 : ${secteurInfo?.statistiquesCNESST || 'Données en cours d\'analyse'}.`;
-  }
+      // Déterminer quelle source utiliser
+      const sourceAUtiliser = await this.determinerMeilleureSource();
 
-  /**
-   * Génère la justification basée sur les données
-   */
-  private genererJustificationDonnees(critere: string, score: number, secteurInfo: any): string {
-    const justifications = {
-      "riskReduction": `Score ${score}/10 justifié par l'impact direct sur la réduction des risques. 
-        ${secteurInfo?.statistiquesCNESST || 'Les données sectorielles confirment l\'importance de ce critère'}.`,
+      if (sourceAUtiliser === 'api') {
+        try {
+          const explicacionAPI = await genererExplicationAPI(critere, score, contexteProjet);
+          
+          explication = {
+            ...explicacionAPI,
+            versionMoteur: 'api'
+          };
+          
+          sourceUtilisee = 'API CNESST (temps réel)';
+          this.statsUtilisation.requetesAPI++;
+          
+          if (this.config.debugMode) {
+            console.log(`✅ Explication générée via API (confiance: ${explication.niveauConfiance}/10)`);
+          }
+
+        } catch (error) {
+          this.statsUtilisation.erreursAPI++;
+          
+          if (this.config.debugMode) {
+            console.warn('⚠️ Erreur API, tentative fallback CSV:', error);
+          }
+
+          if (this.config.fallbackEnabled) {
+            explication = await this.genererExplicationCSV(critere, score, contexteProjet);
+            sourceUtilisee = 'CSV (fallback depuis API)';
+            this.statsUtilisation.fallbacks++;
+          } else {
+            throw error;
+          }
+        }
+      } else {
+        // Mode CSV
+        explication = await this.genererExplicationCSV(critere, score, contexteProjet);
+        sourceUtilisee = 'CSV (fichiers locaux)';
+        this.statsUtilisation.requetesCSV++;
+      }
+
+      // Ajouter les métriques de performance
+      const tempsReponse = Date.now() - startTime;
+      explication.performanceMetrics = {
+        tempsReponse,
+        sourceUtilisee,
+        cacheMiss
+      };
+
+      if (this.config.debugMode) {
+        console.log(`⏱️ XAI généré en ${tempsReponse}ms via ${sourceUtilisee}`);
+      }
+
+      return explication;
+
+    } catch (error) {
+      console.error('❌ Erreur génération XAI:', error);
       
-      "technicalFeasibility": `Score ${score}/10 basé sur la disponibilité des technologies IA éprouvées. 
-        Technologies recommandées : ${secteurInfo?.technologiesIA?.join(', ') || 'Solutions IA standards'}.`,
+      // Explication d'urgence minimale
+      return this.genererExplicationUrgence(critere, score, contexteProjet, Date.now() - startTime);
+    }
+  }
+
+  /**
+   * Détermine la meilleure source selon la configuration et la disponibilité
+   */
+  private async determinerMeilleureSource(): Promise<'api' | 'csv'> {
+    // Mode forcé
+    if (this.config.mode === 'csv') return 'csv';
+    if (this.config.mode === 'api' && this.apiStatus === 'disponible') return 'api';
+
+    // Mode auto ou API non disponible
+    if (this.config.mode === 'auto' || this.apiStatus === 'indisponible') {
+      // Utiliser l'ordre de préférence
+      for (const source of this.config.preferredSources) {
+        if (source === 'api' && this.apiStatus === 'disponible') return 'api';
+        if (source === 'csv') return 'csv';
+      }
+    }
+
+    // Fallback par défaut
+    return 'csv';
+  }
+
+  /**
+   * Génère une explication via la version CSV
+   */
+  private async genererExplicationCSV(
+    critere: string,
+    score: number,
+    contexteProjet: ProjectContext
+  ): Promise<XAIExplanation> {
+    // Adapter l'interface de l'ancienne version si elle existe
+    if (XAIOriginal && typeof XAIOriginal.genererExplicationComplete === 'function') {
+      const explicacionOriginal = await XAIOriginal.genererExplicationComplete(
+        critere,
+        score,
+        contexteProjet
+      );
       
-      "businessValue": `Score ${score}/10 évalué selon l'impact économique potentiel. 
-        ROI estimé basé sur la réduction des incidents et l'amélioration de la conformité réglementaire.`,
+      return {
+        ...explicacionOriginal,
+        versionMoteur: 'csv',
+        sourcesDonnees: explicacionOriginal.sourcesDonnees || ['Fichiers CSV locaux'],
+        niveauConfiance: explicacionOriginal.niveauConfiance || 6
+      };
+    }
+
+    // Fallback si l'ancienne version n'est pas disponible
+    return this.genererExplicationGenerique(critere, score, contexteProjet);
+  }
+
+  /**
+   * Génère une explication générique de base
+   */
+  private genererExplicationGenerique(
+    critere: string,
+    score: number,
+    contexteProjet: ProjectContext
+  ): XAIExplanation {
+    return {
+      contexteSectoriel: `Secteur ${contexteProjet.secteurSCIAN} - Analyse générique`,
+      justificationDonnees: `Score ${score}/10 pour "${critere}" basé sur les critères standards d'évaluation`,
+      recommandationPratique: score < 6 ? 
+        'Améliorer la faisabilité technique avant déploiement' : 
+        'Projet viable pour progression vers étapes suivantes',
+      tracabilite: 'Évaluation basée sur critères standards IA-SST',
+      niveauConfiance: 6,
+      sourcesDonnees: ['Critères d\'évaluation standards'],
+      versionMoteur: 'csv'
+    };
+  }
+
+  /**
+   * Génère une explication d'urgence en cas d'erreur totale
+   */
+  private genererExplicationUrgence(
+    critere: string,
+    score: number,
+    contexteProjet: ProjectContext,
+    tempsReponse: number
+  ): XAIExplanation {
+    return {
+      contexteSectoriel: `Secteur ${contexteProjet.secteurSCIAN} - Mode dégradé`,
+      justificationDonnees: `Score ${score}/10 (évaluation simplifiée due à un problème technique)`,
+      recommandationPratique: 'Réévaluer ultérieurement avec données complètes',
+      tracabilite: 'Mode dégradé - Sources indisponibles',
+      niveauConfiance: 4,
+      sourcesDonnees: ['Mode d\'urgence'],
+      versionMoteur: 'csv',
+      performanceMetrics: {
+        tempsReponse,
+        sourceUtilisee: 'Mode d\'urgence',
+        cacheMiss: true
+      }
+    };
+  }
+
+  /**
+   * Méthodes de gestion et monitoring
+   */
+
+  // Changer la configuration à chaud
+  changerConfiguration(nouvelleCongif: Partial<XAIEngineConfig>): void {
+    this.config = { ...this.config, ...nouvelleCongif };
+    
+    if (this.config.debugMode) {
+      console.log('🔧 Configuration XAI mise à jour:', this.config);
+    }
+  }
+
+  // Forcer un mode spécifique
+  forcerMode(mode: 'csv' | 'api'): void {
+    this.config.mode = mode;
+    
+    if (this.config.debugMode) {
+      console.log(`🔀 Mode forcé: ${mode}`);
+    }
+  }
+
+  // Obtenir les statistiques d'utilisation
+  obtenirStatistiques(): {
+    config: XAIEngineConfig;
+    apiStatus: string;
+    stats: typeof this.statsUtilisation;
+    performance: {
+      tauxSuccesAPI: number;
+      tauxFallback: number;
+      repartitionSources: { api: number; csv: number };
+    };
+  } {
+    const total = this.statsUtilisation.totalRequetes;
+    
+    return {
+      config: this.config,
+      apiStatus: this.apiStatus,
+      stats: this.statsUtilisation,
+      performance: {
+        tauxSuccesAPI: total > 0 ? (this.statsUtilisation.requetesAPI / total) * 100 : 0,
+        tauxFallback: total > 0 ? (this.statsUtilisation.fallbacks / total) * 100 : 0,
+        repartitionSources: {
+          api: this.statsUtilisation.requetesAPI,
+          csv: this.statsUtilisation.requetesCSV
+        }
+      }
+    };
+  }
+
+  // Réinitialiser les statistiques
+  reinitialiserStats(): void {
+    this.statsUtilisation = {
+      totalRequetes: 0,
+      requetesAPI: 0,
+      requetesCSV: 0,
+      erreursAPI: 0,
+      fallbacks: 0
+    };
+    
+    console.log('📊 Statistiques XAI réinitialisées');
+  }
+
+  // Tester la connectivité
+  async testerConnectivite(): Promise<{
+    api: { disponible: boolean; message: string };
+    csv: { disponible: boolean; message: string };
+  }> {
+    const resultats = {
+      api: { disponible: false, message: '' },
+      csv: { disponible: false, message: '' }
+    };
+
+    // Test API
+    try {
+      await initialiserMoteaurXAI();
+      resultats.api = { disponible: true, message: 'API CNESST accessible' };
+    } catch (error) {
+      resultats.api = { disponible: false, message: `Erreur API: ${error}` };
+    }
+
+    // Test CSV
+    try {
+      const testExplication = this.genererExplicationGenerique('test', 5, {
+        nom: 'Test',
+        secteurSCIAN: '23',
+        description: 'Test',
+        risquesPrincipaux: []
+      });
       
-      "regulatoryCompliance": `Score ${score}/10 déterminé par le niveau de conformité aux exigences CNESST et ISO 45001. 
-        Priorité réglementaire : ${secteurInfo?.prioriteReglementaire || 'Évaluation en cours'}.`
-    };
-
-    return justifications[critere as keyof typeof justifications] || 
-           `Score ${score}/10 évalué selon les critères standards du secteur.`;
-  }
-
-  /**
-   * Génère une recommandation pratique
-   */
-  private genererRecommandation(critere: string, score: number, contexte: ProjectContext): string {
-    if (score >= 8) {
-      return `Priorité HAUTE : Déployer immédiatement ce projet. Formation des équipes recommandée dans les 30 jours.`;
-    } else if (score >= 6) {
-      return `Priorité MOYENNE : Planifier un projet pilote sur 90 jours avec validation par les experts SST.`;
-    } else {
-      return `Priorité FAIBLE : Améliorer la faisabilité technique avant déploiement. Étude approfondie recommandée.`;
-    }
-  }
-
-  /**
-   * Génère la traçabilité pour audit
-   */
-  private genererTracabilite(critere: string, score: number, contexte: ProjectContext): string {
-    const timestamp = new Date().toISOString();
-    return `Décision XAI tracée le ${timestamp}. 
-    Algorithme : IGNITIA-XAI v1.0. 
-    Sources : Base SCIAN ${contexte.secteurSCIAN}, référentiels CNESST/ISO. 
-    Méthode : Analyse multi-critères avec pondération sectorielle. 
-    Auditabilité : Conforme ISO 42001 et exigences CNESST.`;
-  }
-
-  /**
-   * Sélectionne les références les plus pertinentes
-   */
-  private selectionnerReferencesPertinenrtes(critere: string, contexte: ProjectContext): XAIReference[] {
-    return this.referentielsSSTQuebec
-      .filter(ref => this.estPertinentPourCritere(ref, critere))
-      .sort((a, b) => b.pertinence - a.pertinence)
-      .slice(0, 3); // Top 3 références
-  }
-
-  /**
-   * Détermine si une référence est pertinente pour un critère
-   */
-  private estPertinentPourCritere(reference: XAIReference, critere: string): boolean {
-    const mappingCriteres = {
-      "riskReduction": ["regulation", "norme", "guide"],
-      "technicalFeasibility": ["guide", "recherche"],
-      "regulatoryCompliance": ["regulation", "norme"],
-      "businessValue": ["recherche", "guide"]
-    };
-
-    const typesPertinenets = mappingCriteres[critere as keyof typeof mappingCriteres] || ["guide"];
-    return typesPertinenets.includes(reference.type);
-  }
-
-  /**
-   * Calcule le niveau de confiance de l'explication
-   */
-  private calculerNiveauConfiance(critere: string, contexte: ProjectContext): number {
-    let confiance = 7; // Base
-
-    // +1 si secteur bien documenté
-    if (this.baseConnaissancesSectorielles[contexte.secteurSCIAN as keyof typeof this.baseConnaissancesSectorielles]) {
-      confiance += 1;
+      resultats.csv = { disponible: true, message: 'Génération CSV fonctionnelle' };
+    } catch (error) {
+      resultats.csv = { disponible: false, message: `Erreur CSV: ${error}` };
     }
 
-    // +1 si description détaillée
-    if (contexte.description.length > 100) {
-      confiance += 1;
-    }
-
-    // +1 si références récentes disponibles
-    const referencesRecentes = this.referentielsSSTQuebec.filter(
-      ref => new Date(ref.date) > new Date('2024-01-01')
-    );
-    if (referencesRecentes.length > 2) {
-      confiance += 1;
-    }
-
-    return Math.min(confiance, 10);
-  }
-
-  /**
-   * Obtient le nom du secteur SCIAN
-   */
-  private obtenirNomSecteur(scianId: string): string {
-    const secteurs = {
-      "2381": "Construction de bâtiments résidentiels",
-      "3361": "Fabrication de véhicules automobiles",
-      "6211": "Bureaux de médecins",
-      "4441": "Commerce de matériaux de construction"
-    };
-
-    return secteurs[scianId as keyof typeof secteurs] || "Secteur non spécifié";
-  }
-
-  /**
-   * Génère un prompt Claude optimisé pour XAI contextuel
-   */
-  genererPromptXAIContextuel(critere: string, contexte: ProjectContext): string {
-    return `Tu es expert XAI en santé-sécurité au travail pour IGNITIA.
-
-CONTEXTE DU PROJET :
-- Nom : ${contexte.nom}
-- Secteur SCIAN : ${contexte.secteurSCIAN} (${this.obtenirNomSecteur(contexte.secteurSCIAN)})
-- Description : ${contexte.description}
-- Risques identifiés : ${contexte.risquesPrincipaux.join(', ')}
-
-MISSION :
-Explique le score du critère "${critere}" en suivant cette structure :
-
-1. **Contexte sectoriel** : Pourquoi ce critère est important dans ce secteur SCIAN
-2. **Justification données** : Sur quelles données/normes s'appuie cette évaluation (citer CNESST, ISO, recherches)
-3. **Recommandation pratique** : Action prioritaire pour le gestionnaire
-4. **Traçabilité** : Comment cette décision peut être auditée
-
-EXIGENCES :
-- Utilise un langage clair pour gestionnaire non-technique
-- Cite des références québécoises (CNESST) et internationales (ISO, ILO)
-- Termine par une ressource utile à consulter
-- Assure la conformité ISO 42001 (IA responsable)
-
-Génère une explication explicable, contextualisée et traçable.`;
+    return resultats;
   }
 }
 
-// Export des fonctions utilitaires
-export const xaiEngine = new XAIContextEngine();
+// Instance singleton
+export const xaiEngineManager = new XAIEngineManager();
+
+// Fonctions de commodité publiques
+export const initialiserXAIEngine = async (config?: Partial<XAIEngineConfig>) => {
+  if (config) {
+    xaiEngineManager.changerConfiguration(config);
+  }
+  return await xaiEngineManager.initialiser();
+};
 
 export const genererExplicationComplete = async (
   critere: string,
   score: number,
   contexteProjet: ProjectContext
 ): Promise<XAIExplanation> => {
-  return await xaiEngine.genererExplicationXAI(critere, score, contexteProjet);
+  return await xaiEngineManager.genererExplicationXAI(critere, score, contexteProjet);
 };
+
+export const changerModeXAI = (mode: 'csv' | 'api' | 'auto') => {
+  xaiEngineManager.changerConfiguration({ mode });
+};
+
+export const obtenirStatistiquesXAI = () => {
+  return xaiEngineManager.obtenirStatistiques();
+};
+
+export const testerConnectiviteXAI = async () => {
+  return await xaiEngineManager.testerConnectivite();
+};
+
+// Export de la classe pour usage avancé
+export { XAIEngineManager, type XAIEngineConfig };

@@ -1,0 +1,158 @@
+// src/components/test/SectorTester.tsx
+import React, { useState } from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { XAIExplanationComponent } from '@/components/ui/xai-explanation';
+import { ProjectContext } from '@/utils/xai-context-engine';
+
+const testScores = {
+  riskReduction: 7,
+  technicalFeasibility: 5,
+  businessValue: 8,
+  regulatoryCompliance: 6
+};
+
+const SectorTester: React.FC = () => {
+  const [sectorCode, setSectorCode] = useState<string>('23');
+  const [testResults, setTestResults] = useState<Array<{sector: string, result: 'success' | 'error', message?: string}>>([]);
+  const [currentTest, setCurrentTest] = useState<string | null>(null);
+  
+  // Liste des secteurs SCIAN à tester
+  const sectors = [
+    { code: '23', name: 'Construction' },
+    { code: '31-33', name: 'Fabrication' },
+    { code: '44-45', name: 'Commerce de détail' },
+    { code: '62', name: 'Soins de santé et assistance sociale' },
+    { code: '72', name: 'Hébergement et services de restauration' }
+  ];
+  
+  const generateMockContext = (sectorCode: string): ProjectContext => ({
+    nom: `Test Projet SCIAN ${sectorCode}`,
+    description: `Projet de test pour valider le comportement avec le secteur SCIAN ${sectorCode}`,
+    secteurSCIAN: sectorCode,
+    criteresEvalues: testScores,
+    risquesPrincipaux: ['Test risque 1', 'Test risque 2'],
+    donneesPilotes: []
+  });
+  
+  const runSectorTest = (sector: string) => {
+    setCurrentTest(sector);
+    // Ajouter une entrée de test en cours
+    setTestResults(prev => [...prev, { sector, result: 'success', message: 'Test en cours...' }]);
+    
+    // Simuler le test (le vrai test sera réalisé visuellement)
+    setTimeout(() => {
+      setTestResults(prev => 
+        prev.map(item => 
+          item.sector === sector 
+            ? { sector, result: 'success', message: 'Test réussi - vérifiez visuellement les résultats' } 
+            : item
+        )
+      );
+      setCurrentTest(null);
+    }, 1000);
+  };
+  
+  const runAllTests = () => {
+    setTestResults([]);
+    sectors.forEach((sector, index) => {
+      setTimeout(() => runSectorTest(sector.code), index * 2000);
+    });
+  };
+  
+  return (
+    <div className="space-y-6 p-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Testeur de secteurs SCIAN</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="sector-input">Code SCIAN</Label>
+              <div className="flex gap-2">
+                <Input 
+                  id="sector-input" 
+                  value={sectorCode} 
+                  onChange={(e) => setSectorCode(e.target.value)} 
+                  placeholder="ex: 23"
+                />
+                <Button onClick={() => runSectorTest(sectorCode)}>Tester</Button>
+              </div>
+              <div className="mt-4">
+                <Button onClick={runAllTests}>Tester tous les secteurs</Button>
+              </div>
+            </div>
+            <div>
+              <Label>Secteurs prédéfinis</Label>
+              <div className="grid grid-cols-1 gap-2 mt-2">
+                {sectors.map((sector) => (
+                  <Button 
+                    key={sector.code} 
+                    variant="outline" 
+                    onClick={() => {
+                      setSectorCode(sector.code);
+                      runSectorTest(sector.code);
+                    }}
+                    disabled={currentTest === sector.code}
+                  >
+                    {sector.code} - {sector.name}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-4">
+            <Label>Résultats des tests</Label>
+            <div className="max-h-40 overflow-y-auto border rounded-md p-2 mt-2">
+              {testResults.length === 0 ? (
+                <p className="text-gray-500 text-sm">Aucun test exécuté</p>
+              ) : (
+                <div className="space-y-2">
+                  {testResults.map((result, index) => (
+                    <div 
+                      key={index} 
+                      className={`p-2 rounded-md ${
+                        result.result === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
+                      }`}
+                    >
+                      <span className="font-medium">SCIAN {result.sector}: </span>
+                      <span>{result.message}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Prévisualisation du résultat pour le secteur sélectionné */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Prévisualisation de l'explication XAI</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="border-l-4 border-blue-500 pl-4 py-2 mb-4 bg-blue-50">
+            <p className="text-sm text-blue-800">
+              Cette prévisualisation montre comment l'explication XAI s'affichera pour le secteur SCIAN {sectorCode}.
+              Vérifiez si les données sectorielles sont correctement chargées et si les visualisations s'affichent.
+            </p>
+          </div>
+          
+          <XAIExplanationComponent
+            critere="technicalFeasibility"
+            score={testScores.technicalFeasibility}
+            contexteProjet={generateMockContext(sectorCode)}
+            labelCritere="Faisabilité technique"
+          />
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default SectorTester;

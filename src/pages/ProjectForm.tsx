@@ -1,21 +1,21 @@
 // src/pages/ProjectForm.tsx
-// Solution complète avec synchronisation Supabase
+// Solution complète avec synchronisation Supabase - VERSION CORRIGÉE
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
-import { ProjectForm } from '@/components/project-form/project-form';
+import { ProjectForm } from '@/components/project-form/project-form';  // ✅ CORRIGÉ
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { supabaseClient } from '../lib/supabaseClient';
 
-// Interface harmonisée pour la synchronisation
+// Interface harmonisée pour la synchronisation - CORRIGÉE
 interface ProjectData {
   id: string;
   name: string;
   description: string;
   sector: string;
-  criteria: {
+  scores: {  // ✅ CORRIGÉ: criteria → scores
     technicalFeasibility: number;
     businessValue: number;
     riskReduction: number;
@@ -32,30 +32,32 @@ const ProjectFormPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // 🔧 FONCTION DE SAUVEGARDE SUPABASE HARMONISÉE
+  // 🔧 FONCTION DE SAUVEGARDE SUPABASE HARMONISÉE - CORRIGÉE
   const handleAddProject = async (projectData: ProjectData) => {
     try {
       console.log('🔄 Sauvegarde projet en cours...', projectData);
 
-      // 📊 HARMONISATION DES DONNÉES vers format Supabase
+      // 📊 HARMONISATION DES DONNÉES vers format Supabase - CORRIGÉE
       const supabasePayload = {
         id: projectData.id,
         title: projectData.name,  // name → title
         ideas: [projectData.description], // description → ideas array
         scores: {
-          // criteria → scores avec mapping des noms
-          impact: projectData.criteria.riskReduction,
-          excellence: projectData.criteria.businessValue,
-          faisabilite: projectData.criteria.technicalFeasibility,
-          gouvernance: projectData.criteria.regulatoryCompliance,
-          securite: projectData.criteria.riskReduction,
-          acceptabilite: projectData.criteria.stakeholderSupport,
-          perennite: Math.round((projectData.criteria.timeToMarket + projectData.criteria.businessValue) / 2)
+          // ✅ CORRIGÉ: scores → scores (plus de mapping criteria)
+          impact: projectData.scores.riskReduction,
+          excellence: projectData.scores.businessValue,
+          faisabilite: projectData.scores.technicalFeasibility,
+          gouvernance: projectData.scores.regulatoryCompliance,
+          securite: projectData.scores.riskReduction,
+          acceptabilite: projectData.scores.stakeholderSupport,
+          perennite: Math.round((projectData.scores.timeToMarket + projectData.scores.businessValue) / 2)
         },
         scianSectorId: projectData.sector, // sector → scianSectorId
         priority: projectData.priority,
         created_at: new Date().toISOString()
       };
+
+      console.log('📊 Payload Supabase:', supabasePayload);
 
       // 🔄 INSERTION DANS SUPABASE
       const { data, error } = await supabaseClient
@@ -87,14 +89,14 @@ const ProjectFormPage = () => {
       
       toast({
         title: "Erreur de sauvegarde",
-        description: "Impossible de sauvegarder le projet. Veuillez réessayer.",
+        description: `Impossible de sauvegarder le projet. Détails: ${error.message || 'Erreur inconnue'}`,
         variant: "destructive",
         duration: 5000
       });
     }
   };
 
-  // 🔧 FONCTION DE MISE À JOUR (pour édition future)
+  // 🔧 FONCTION DE MISE À JOUR (pour édition future) - CORRIGÉE
   const handleUpdateProject = async (projectData: ProjectData) => {
     try {
       console.log('🔄 Mise à jour projet...', projectData);
@@ -103,13 +105,14 @@ const ProjectFormPage = () => {
         title: projectData.name,
         ideas: [projectData.description],
         scores: {
-          impact: projectData.criteria.riskReduction,
-          excellence: projectData.criteria.businessValue,
-          faisabilite: projectData.criteria.technicalFeasibility,
-          gouvernance: projectData.criteria.regulatoryCompliance,
-          securite: projectData.criteria.riskReduction,
-          acceptabilite: projectData.criteria.stakeholderSupport,
-          perennite: Math.round((projectData.criteria.timeToMarket + projectData.criteria.businessValue) / 2)
+          // ✅ CORRIGÉ: scores → scores
+          impact: projectData.scores.riskReduction,
+          excellence: projectData.scores.businessValue,
+          faisabilite: projectData.scores.technicalFeasibility,
+          gouvernance: projectData.scores.regulatoryCompliance,
+          securite: projectData.scores.riskReduction,
+          acceptabilite: projectData.scores.stakeholderSupport,
+          perennite: Math.round((projectData.scores.timeToMarket + projectData.scores.businessValue) / 2)
         },
         scianSectorId: projectData.sector,
         priority: projectData.priority,

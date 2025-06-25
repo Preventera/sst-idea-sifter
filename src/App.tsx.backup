@@ -1,0 +1,93 @@
+// src/App.tsx
+// Version complète avec route XAI et route de test des secteurs SCIAN
+
+import { useState, useEffect } from "react";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Index from "./pages/Index";
+import ProfileScianRefactored from "./pages/ProfileScianRefactored";
+import ProjectFormPage from "./pages/ProjectForm"; 
+import ProjectFormXAI from "./pages/ProjectFormXAI";
+import NotFound from "./pages/NotFound";
+import TestAI from "./pages/TestAI";
+
+// Import du chargeur de données CNESST
+import CNESSTDataLoader from "./components/data-loaders/CNESSTDataLoader";
+
+// Import du nouveau composant de test des secteurs
+import SectorTester from "./components/test/SectorTester";
+
+const queryClient = new QueryClient();
+
+const App = () => {
+  // État pour suivre le chargement des données CNESST
+  const [cnesstDataStatus, setCNESSTDataStatus] = useState({
+    loaded: false,
+    error: null as Error | null
+  });
+
+  // Gestionnaires pour les événements de chargement
+  const handleDataLoadComplete = () => {
+    setCNESSTDataStatus({ loaded: true, error: null });
+    console.log("✅ Données CNESST intégrées dans l'application");
+  };
+
+  const handleDataLoadError = (error: Error) => {
+    setCNESSTDataStatus({ loaded: false, error });
+    console.error("❌ Erreur d'intégration des données CNESST:", error);
+  };
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        
+        {/* Intégrer le chargeur de données CNESST */}
+        <CNESSTDataLoader 
+          onLoadComplete={handleDataLoadComplete} 
+          onLoadError={handleDataLoadError} 
+        />
+        
+        {/* Notification de chargement des données */}
+        {!cnesstDataStatus.loaded && !cnesstDataStatus.error && (
+          <div className="fixed top-0 left-0 right-0 bg-blue-50 text-blue-700 px-4 py-2 text-sm z-50 flex items-center justify-center">
+            <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-blue-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Chargement des données sectorielles CNESST...
+          </div>
+        )}
+        
+        {/* Notification d'erreur de chargement */}
+        {cnesstDataStatus.error && (
+          <div className="fixed top-0 left-0 right-0 bg-red-50 text-red-700 px-4 py-2 text-sm z-50 flex items-center justify-center">
+            <svg className="h-4 w-4 text-red-700 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            Impossible de charger les données sectorielles. Fonctionnalités XAI limitées.
+          </div>
+        )}
+        
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/profile-scian" element={<ProfileScianRefactored />} />
+            <Route path="/project/new" element={<ProjectFormPage />} />
+            <Route path="/project/new-xai" element={<ProjectFormXAI />} />
+            <Route path="/test-ai" element={<TestAI />} />
+            {/* Nouvelle route pour le test des secteurs SCIAN */}
+            <Route path="/test-sectors" element={<SectorTester />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
+
+export default App;

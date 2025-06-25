@@ -1,0 +1,411 @@
+/**
+ * Configurateur de visualisations pour les données CNESST
+ * 
+ * Ce module fournit des fonctions pour générer des configurations
+ * de visualisations adaptées aux données sectorielles CNESST.
+ */
+
+/**
+ * Génère la configuration pour un graphique d'évolution annuelle des lésions
+ * @param {Object} tendances - Données de tendances annuelles
+ * @param {Array} indicateurs - Liste des indicateurs à afficher
+ * @returns {Object} - Configuration du graphique
+ */
+export function configEvolutionAnnuelle(tendances, indicateurs = ['total', 'tauxTMS', 'tauxPSY']) {
+  // Préparation des données
+  const annees = tendances.map(t => t.annee);
+  const series = [];
+  
+  // Série pour le nombre total de lésions
+  if (indicateurs.includes('total')) {
+    series.push({
+      name: 'Total lésions',
+      data: tendances.map(t => t.total),
+      type: 'line',
+      color: '#5e72e4'
+    });
+  }
+  
+  // Série pour le taux de TMS
+  if (indicateurs.includes('tauxTMS')) {
+    series.push({
+      name: 'TMS',
+      data: tendances.map(t => t.indicateurs?.tauxTMS?.actuel * 100 || 0),
+      type: 'line',
+      color: '#ff9f43',
+      yAxisIndex: 1
+    });
+  }
+  
+  // Série pour le taux de lésions psychologiques
+  if (indicateurs.includes('tauxPSY')) {
+    series.push({
+      name: 'Psychologique',
+      data: tendances.map(t => t.indicateurs?.tauxPSY?.actuel * 100 || 0),
+      type: 'line',
+      color: '#ea5455',
+      yAxisIndex: 1
+    });
+  }
+  
+  // Configuration du graphique
+  return {
+    title: {
+      text: 'Évolution annuelle des lésions',
+      left: 'center',
+      textStyle: {
+        fontSize: 14,
+        fontWeight: 'normal'
+      }
+    },
+    tooltip: {
+      trigger: 'axis',
+      formatter: (params) => {
+        let result = `<strong>${params[0].axisValue}</strong><br/>`;
+        params.forEach(param => {
+          if (param.seriesName === 'Total lésions') {
+            result += `${param.marker} ${param.seriesName}: ${param.value}<br/>`;
+          } else {
+            result += `${param.marker} ${param.seriesName}: ${param.value.toFixed(1)}%<br/>`;
+          }
+        });
+        return result;
+      }
+    },
+    legend: {
+      data: series.map(s => s.name),
+      bottom: 0
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '15%',
+      top: '15%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: annees,
+      axisLabel: {
+        fontSize: 12
+      }
+    },
+    yAxis: [
+      {
+        // Axe pour le nombre total de lésions
+        type: 'value',
+        name: 'Nombre',
+        nameTextStyle: {
+          fontSize: 12
+        },
+        axisLabel: {
+          fontSize: 12
+        }
+      },
+      {
+        // Axe pour les pourcentages
+        type: 'value',
+        name: 'Pourcentage',
+        nameTextStyle: {
+          fontSize: 12
+        },
+        axisLabel: {
+          formatter: '{value}%',
+          fontSize: 12
+        },
+        max: 100,
+        splitLine: {
+          show: false
+        }
+      }
+    ],
+    series
+  };
+}
+
+/**
+ * Génère la configuration pour une heatmap des lésions par partie du corps
+ * @param {Object} donneesHeatmap - Données pour la heatmap
+ * @returns {Object} - Configuration de la heatmap
+ */
+export function configHeatmapLesions(donneesHeatmap) {
+  // Conversion des données au format nécessaire pour la heatmap
+  const data = [];
+  const categories = [];
+  const max = Math.max(...Object.values(donneesHeatmap).map(v => v.count));
+  
+  // Organiser les catégories et les données
+  Object.entries(donneesHeatmap).forEach(([siege, info], index) => {
+    categories.push(siege);
+    
+    // Ajouter un point de données
+    data.push([0, index, info.count]);
+  });
+  
+  // Configuration de la heatmap
+  return {
+    title: {
+      text: 'Distribution des lésions par partie du corps',
+      left: 'center',
+      textStyle: {
+        fontSize: 14,
+        fontWeight: 'normal'
+      }
+    },
+    tooltip: {
+      position: 'top',
+      formatter: (params) => {
+        const value = params.value[2];
+        const percentage = (value / max * 100).toFixed(1);
+        return `<strong>${params.name}</strong><br/>
+                Lésions: ${value}<br/>
+                Pourcentage: ${percentage}%`;
+      }
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      top: '15%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: ['Lésions'],
+      splitArea: {
+        show: true
+      },
+      axisLabel: {
+        show: false
+      },
+      axisTick: {
+        show: false
+      }
+    },
+    yAxis: {
+      type: 'category',
+      data: categories,
+      splitArea: {
+        show: true
+      },
+      axisLabel: {
+        fontSize: 12
+      }
+    },
+    visualMap: {
+      min: 0,
+      max: max,
+      calculable: true,
+      orient: 'horizontal',
+      left: 'center',
+      bottom: '0%',
+      textStyle: {
+        fontSize: 12
+      },
+      inRange: {
+        color: ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127']
+      }
+    },
+    series: [{
+      name: 'Lésions',
+      type: 'heatmap',
+      data: data,
+      label: {
+        show: true,
+        formatter: (params) => {
+          return params.value[2];
+        },
+        fontSize: 12
+      },
+      emphasis: {
+        itemStyle: {
+          shadowBlur: 10,
+          shadowColor: 'rgba(0, 0, 0, 0.5)'
+        }
+      }
+    }]
+  };
+}
+
+/**
+ * Génère la configuration pour un graphique des agents causaux dominants
+ * @param {Array} agentsCausaux - Liste des agents causaux
+ * @returns {Object} - Configuration du graphique
+ */
+export function configAgentsCausaux(agentsCausaux) {
+  // Préparation des données
+  const categories = agentsCausaux.map(a => a.type);
+  const data = agentsCausaux.map(a => a.pourcentage);
+  
+  // Configuration du graphique
+  return {
+    title: {
+      text: 'Agents causaux dominants',
+      left: 'center',
+      textStyle: {
+        fontSize: 14,
+        fontWeight: 'normal'
+      }
+    },
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: {
+        type: 'shadow'
+      },
+      formatter: '{b}: {c}%'
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      top: '15%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: categories,
+      axisLabel: {
+        interval: 0,
+        rotate: 30,
+        fontSize: 12
+      }
+    },
+    yAxis: {
+      type: 'value',
+      name: 'Pourcentage',
+      nameTextStyle: {
+        fontSize: 12
+      },
+      axisLabel: {
+        formatter: '{value}%',
+        fontSize: 12
+      }
+    },
+    series: [{
+      name: 'Pourcentage',
+      type: 'bar',
+      data: data,
+      itemStyle: {
+        color: '#5e72e4'
+      },
+      label: {
+        show: true,
+        position: 'top',
+        formatter: '{c}%',
+        fontSize: 12
+      }
+    }]
+  };
+}
+
+/**
+ * Génère la configuration pour un graphique radar des indicateurs clés
+ * @param {Object} indicateurs - Indicateurs clés
+ * @returns {Object} - Configuration du graphique radar
+ */
+export function configRadarIndicateurs(indicateurs) {
+  // Préparation des données
+  const indicator = [
+    { name: 'TMS', max: 100 },
+    { name: 'Psychologique', max: 100 },
+    { name: 'Machine', max: 100 },
+    { name: 'Surdité', max: 100 }
+  ];
+  
+  const data = [
+    indicateurs.tauxTMS * 100 || 0,
+    indicateurs.tauxPSY * 100 || 0,
+    indicateurs.tauxMachine * 100 || 0,
+    indicateurs.tauxSurdite * 100 || 0
+  ];
+  
+  // Configuration du graphique radar
+  return {
+    title: {
+      text: 'Indicateurs clés',
+      left: 'center',
+      textStyle: {
+        fontSize: 14,
+        fontWeight: 'normal'
+      }
+    },
+    tooltip: {
+      trigger: 'item',
+      formatter: (params) => {
+        const indicatorName = indicator[params.dataIndex].name;
+        return `${indicatorName}: ${params.value.toFixed(1)}%`;
+      }
+    },
+    radar: {
+      indicator: indicator.map(i => ({
+        name: i.name,
+        max: i.max
+      })),
+      radius: '60%',
+      splitNumber: 4,
+      axisName: {
+        fontSize: 12
+      }
+    },
+    series: [{
+      name: 'Indicateurs',
+      type: 'radar',
+      data: [{
+        value: data,
+        name: 'Indicateurs clés',
+        itemStyle: {
+          color: '#5e72e4'
+        },
+        areaStyle: {
+          color: 'rgba(94, 114, 228, 0.3)'
+        }
+      }]
+    }]
+  };
+}
+
+/**
+ * Prépare les données de siège de lésion pour la heatmap
+ * @param {Object} distribution - Distribution des lésions par siège
+ * @returns {Object} - Données formatées pour la heatmap
+ */
+export function preparerDonneesHeatmap(distribution) {
+  // Exemple de transformation des données de distribution
+  const result = {};
+  
+  // Transformation des données pour la heatmap
+  Object.entries(distribution).forEach(([siege, lesions]) => {
+    result[siege] = {
+      count: lesions.length,
+      percentage: lesions.length / Object.values(distribution).flat().length * 100
+    };
+  });
+  
+  return result;
+}
+
+/**
+ * Génère une configuration de visualisation complète à partir des données sectorielles
+ * @param {Object} donneesConstruction - Données du secteur construction
+ * @returns {Object} - Configurations des visualisations
+ */
+export function genererConfigurationsVisualisations(donneesConstruction) {
+  // Préparer les données pour la heatmap
+  const donneesHeatmap = preparerDonneesHeatmap(
+    donneesConstruction.distribution?.parSiege || {}
+  );
+  
+  // Générer les configurations
+  return {
+    evolutionAnnuelle: configEvolutionAnnuelle(
+      donneesConstruction.tendances || []
+    ),
+    heatmapLesions: configHeatmapLesions(donneesHeatmap),
+    agentsCausaux: configAgentsCausaux(
+      donneesConstruction.top5AgentsCausaux || []
+    ),
+    radarIndicateurs: configRadarIndicateurs(
+      donneesConstruction.indicateurs || {}
+    )
+  };
+}
